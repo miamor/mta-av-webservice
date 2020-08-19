@@ -8,12 +8,17 @@ import app.settings.cf as cf
 import sys
 # sys.path.insert(0, '')
 sys.path.insert(0, cf.__ROOT__)
-import han_sec_api as han
+# import han_sec_api as han
+from han_sec_api import HAN_module
 
 class Response(object):
-    def __init__(self):
-        self.resp = {}
-        self.engines_detected = []
+    def __init__(self, res_obj=None):
+        if res_obj is not None:
+            self.resp = res_obj[0]
+            self.engines_detected = res_obj[1]
+        else:
+            self.resp = {}
+            self.engines_detected = []
     
     def add_obj(self, task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep):
         ''' Add detection result to response '''
@@ -59,11 +64,8 @@ class Detector(object):
     def __init__(self):
         return
     
-    def run(self, filename, filepath):
-        self.task_ids = []
-        self.map_task_file = {}
-        self.map_task_report = {}
-        self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type)
+    def run(self, filenames, filepaths):
+        self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
         self.__res__ = Response()
 
 
@@ -73,26 +75,32 @@ class Detector(object):
         # 1. static detect
         ####################################################
 
+
+
         ####################################################
         # 2. run sandbox to get report
         ####################################################
-        task_id, hash_value, report = self.run_sandbox(filepath)
-        self.task_ids.append(task_id)
-        self.map_task_file[task_id] = filepath
-        # self.map_task_report[task_id] = report
+        task_ids, hash_values, reports = self.run_sandbox(filepaths)
 
-        print("***** report", report)
-        # print("***** report['target']['file']~~~~~~~~", report['target']['file'])
-        report_path = report['target']['file']['path']
-        ftype = report['target']['file']['type']
-        md5 = report['target']['file']['md5']
-        sha1 = report['target']['file']['sha1']
-        sha256 = report['target']['file']['sha256']
-        sha512 = report['target']['file']['sha512']
-        ssdeep = report['target']['file']['ssdeep']
-        fsize = report['target']['file']['size']
+        k = 0
+        for task_id in task_ids:
+            filename = filenames[k]
+            hash_value = hash_values[task_id]
+            k += 1
 
-        self.__res__.add_obj(task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
+            print("***** report[task_id]", task_id, reports[task_id])
+            # print("***** reports[task_id]['target']['file']~~~~~~~~", reports[task_id]['target']['file'])
+            report_path = reports[task_id]['target']['file']['path']
+            ftype = reports[task_id]['target']['file']['type']
+            md5 = reports[task_id]['target']['file']['md5']
+            sha1 = reports[task_id]['target']['file']['sha1']
+            sha256 = reports[task_id]['target']['file']['sha256']
+            sha512 = reports[task_id]['target']['file']['sha512']
+            ssdeep = reports[task_id]['target']['file']['ssdeep']
+            fsize = reports[task_id]['target']['file']['size']
+
+            self.__res__.add_obj(task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
+
 
         ####################################################
         # 3. feed different dynamic detectors
@@ -105,60 +113,90 @@ class Detector(object):
         #   engine__name        (string):   name of the engine
         ####################################################
 
-        # cuckoo virustotal detector
-        obj_res = self.cuckoo_virustotal_detect(report)
-        for engine_name in obj_res:
-            engine_res = obj_res[engine_name]
-            # for each engine, use this format to add its result to final response
-            self.__res__.add_response(task_id, engine_res['is_malware'], engine_res['score'], engine_name, engine_res['msg'])
-
-        # HAN detector
-        task_ids = [task_id]
-        labels, scores, msg = self.HAN_detect(task_ids)
-        # for i, task_id in enumerate(task_ids):
-        #     self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec')
-        self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
+            # cuckoo virustotal detector
+            obj_res = self.cuckoo_virustotal_detect(reports[task_id])
+            for engine_name in obj_res:
+                engine_res = obj_res[engine_name]
+                # for each engine, use this format to add its result to final response
+                self.__res__.add_response(task_id, engine_res['is_malware'], engine_res['score'], engine_name, engine_res['msg'])
 
         scan_time = time.time()-self.begin_time
         print('time', scan_time)
 
-        return task_id, self.__res__.get(), scan_time
+        return task_ids, self.__res__.get(), scan_time
+
+
+    def run_han(self, task_ids, res_obj):
+        ####################################################
+        # 3. feed different dynamic detectors
+        # -----------------
+        # Each engine can return whatever format you want
+        # For each engine, use this format to add its result to final response
+        # __res__.add_response(task_id, engine__is_malware, engine__score, engine__name)
+        #   engine__is_malware  (int):      1:malware|0:benign
+        #   engine__score       (float):    confidence/score/...
+        #   engine__name        (string):   name of the engine
+        ####################################################
+        self.han = HAN_module(task_ids)
+
+        self.__res__ = Response(res_obj)
+
+        # HAN detector
+        self.begin_time = time.time()
+
+        # task_ids = [task_id]
+        labels, scores, msg = self.HAN_detect(task_ids)
+        for i, task_id in enumerate(task_ids):
+            self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec')
+        # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
+
+        scan_time = time.time()-self.begin_time
+        print('HAN time', scan_time)
+
+        return self.__res__.get(), scan_time
 
 
     def static_detector(self, filepath):
         return
     
-    def run_sandbox(self, filepath):
-        done_report = False
+    def run_sandbox(self, filepaths):
+        done_report = []
+        total_tasks = len(filepaths)
+        task_ids = []
+        hash_values = {}
 
         # Run analysis
-        task_id = self.sandbox.start_analysis(filepath)
-        # print("task_id", task_id)
+        for filepath in filepaths:
+            task_id = self.sandbox.start_analysis(filepath)
+            # print("task_id", task_id)
 
-        if task_id is None:
-            return jsonify(
-                {"status": "error", "status_msg": "Create task for file {} failed.".format(filepath)}
-            )
+            if task_id is None:
+                return jsonify({"status": "error", "status_msg": "Create task for file {} failed.".format(filepath)})
+            
+            task_ids.append(task_id)
 
         # Now wait until task is complete
         # Keep checking status
-        while not done_report:
-            task_status, errors, hash_value = self.sandbox.get_task_status(task_id)
-            # print('errors', errors)
-            print('#', task_id, 'task_status', task_status, 'errors', errors)
-            if task_status == 'reported':
-                done_report = True
-                # if errors is not None:
-                #     return jsonify(
-                #         {"status": "error", "status_msg": "Error analyzing.\n"+'\n'.join(errors)}
-                #     )
+        while len(done_report) < total_tasks:
+            for task_id in task_ids:
+                if task_id not in done_report:
+                    task_status, errors, hash_value = self.sandbox.get_task_status(task_id)
+                    # print('errors', errors)
+                    print('#', task_id, 'task_status', task_status, 'errors', errors)
+                    if task_status == 'reported':
+                        hash_values[task_id] = hash_value
+                        done_report.append(task_id)
+                        # if errors is not None:
+                        #     return jsonify(
+                        #         {"status": "error", "status_msg": "Error analyzing.\n"+'\n'.join(errors)}
+                        #     )
             time.sleep(10)
 
 
         # Analyzing done. Now get report and feed to different malware detectors
-        report = self.sandbox.get_report(task_id)
+        reports = {task_id: self.sandbox.get_report(task_id) for task_id in task_ids}
 
-        return task_id, hash_value, report
+        return task_ids, hash_values, reports
 
 
     def cuckoo_virustotal_detect(self, task):
@@ -178,7 +216,7 @@ class Detector(object):
         if 'scans' in task['virustotal']:
             for engine_name in task['virustotal']['scans']:
                 engine_res = task['virustotal']['scans'][engine_name]
-                print('engine_res', engine_res)
+                # print('engine_res', engine_res)
                 virustotal_tot_engine += 1
                 if engine_res['detected'] is True:
                     virustotal_detected += 1
@@ -205,7 +243,7 @@ class Detector(object):
     def HAN_detect(self, task_ids):
         num_task = len(task_ids)
         # data, args = prepare_files([9])
-        data, args = han.prepare_files(task_ids, cuda=False)
+        data = self.han.prepare_files(task_ids, cuda=False)
         print('*** data', data)
         if data is None:
             print('Graph can\'t be created!')
@@ -213,7 +251,7 @@ class Detector(object):
         else:
             print('task_ids', task_ids)
             print('len data', len(data))
-            labels, scores = han.predict_files(data, args, cuda=False)
+            labels, scores = self.han.predict_files(data, cuda=False)
             labels = labels.cpu().numpy().tolist()
             scores = scores.cpu().numpy().tolist()
             print('labels, scores', labels, scores)

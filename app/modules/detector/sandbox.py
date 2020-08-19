@@ -12,12 +12,15 @@ class Sandbox_API(object):
         REST_URL = self.cuckoo_API+"/tasks/create/file"
         HEADERS = {"Authorization": self.SECRET_KEY}
 
+        print('Submiting '+filepath+' to cuckoo')
         with open(filepath, "rb") as sample:
-            files = {"file": ("temp_file_name", sample)}
+            # files = {"file": ("temp_file_name", sample)}
+            files = {"file": sample}
             r = requests.post(REST_URL, headers=HEADERS, files=files)
 
         # Add your code to error checking for r.status_code.
         task_id = r.json()["task_id"]
+        print('** Created task for CUckoo: ', task_id)
 
         # Add your code for error checking if task_id is None.
 

@@ -16,7 +16,8 @@ class Sandbox_API(object):
         with open(filepath, "rb") as sample:
             # files = {"file": ("temp_file_name", sample)}
             files = {"file": sample}
-            r = requests.post(REST_URL, headers=HEADERS, files=files)
+            data = {"enforce_timeout": True, "timeout": 90}
+            r = requests.post(REST_URL, headers=HEADERS, files=files, data=data)
 
         # Add your code to error checking for r.status_code.
         task_id = r.json()["task_id"]

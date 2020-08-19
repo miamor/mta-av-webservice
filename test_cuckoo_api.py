@@ -7,7 +7,8 @@ HEADERS = {"Authorization": cf.cuckoo_SECRET_KEY}
 
 with open(SAMPLE_FILE, "rb") as sample:
     files = {"file": sample}
-    r = requests.post(REST_URL, headers=HEADERS, files=files)
+    data = {"enforce_timeout": True, "timeout": 90}
+    r = requests.post(REST_URL, headers=HEADERS, files=files, data=data)
 
 # Add your code to error checking for r.status_code.
 

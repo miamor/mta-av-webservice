@@ -1,0 +1,71 @@
+from app.app import db
+
+# from app.modules.user.user import User
+# from app.modules.user.blacklist import BlacklistToken
+from app.modules.user.user import User
+from app.modules.user.blacklist import BlacklistToken
+
+from app.utils.response import error, result
+
+
+def save_token(token):
+    blacklist_token = BlacklistToken(token=token)
+    try:
+        # insert token
+        db.session.add(blacklist_token)
+        db.session.commit()
+        return result(message='Successfully logged out.')
+    except Exception as e:
+        return error(message=e)
+
+
+class ControllerAuth:
+    @staticmethod
+    def login_user(data):
+        try:
+            user = User.query.filter_by(email=data.get('email')).first()
+            if user and user.check_password(data.get('password')):
+                auth_token = User.encode_auth_token(user.user_id)
+                if user.blocked:
+                    return error(message='User has been blocked')
+                if auth_token:
+                    return result(message='Successfully logged in', data={'Authorization': auth_token.decode()})
+            else:
+                return error(message='Email or Password does not match')
+        except Exception as e:
+            return error(message=e)
+
+    @staticmethod
+    def logout_user(data):
+        if data:
+            auth_token = data.split(" ")[1]
+        else:
+            auth_token = ''
+        if auth_token:
+            resp = User.decode_auth_token(auth_token)
+            if not isinstance(resp, str):
+                return save_token(token=auth_token)
+            else:
+                return error(message=resp)
+        else:
+            return error(message='Provide a valid auth token')
+
+    @staticmethod
+    def get_logged_user(new_request):
+        auth_token = new_request.headers.get('Authorization')
+        if auth_token:
+            auth_token = auth_token.split(' ')[1]
+            resp = User.decode_auth_token(auth_token)
+            if not isinstance(resp, str):
+                user = User.query.filter_by(user_id=resp).first()
+                print(user)
+                res = {
+                        'user_id': user.user_id,
+                        'email': user.email,
+                        'role': user.role,
+                        'name': user.name
+                        }
+                return result(data=res)
+            return error(message=resp)
+        else:
+            return error(message='Provide a valid auth token')

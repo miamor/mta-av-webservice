@@ -1,0 +1,1 @@
+from .view_auth import api as ns_auth

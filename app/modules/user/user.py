@@ -10,29 +10,29 @@ from ..common.model import Model
 class User(Model):
     """
     user_id
-name
-surname
-middlename
-fullname
-age
-birthday
-home_address
-home_country
-home_city
-home_street
-home_geo_long
-home_geo_lat
-phone
-email
-username
-password_hash
-blocked
-token
-facebook
-instagram
-vkontakte
-avatar
-isadmin
+    name
+    surname
+    middlename
+    fullname
+    age
+    birthday
+    home_address
+    home_country
+    home_city
+    home_street
+    home_geo_long
+    home_geo_lat
+    phone
+    email
+    username
+    password_hash
+    blocked
+    token
+    facebook
+    instagram
+    vkontakte
+    avatar
+    isadmin
     """
     __tablename__ = "user"
 

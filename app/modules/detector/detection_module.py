@@ -7,8 +7,10 @@ from ..detector.sandbox import Sandbox_API
 import app.settings.cf as cf
 import sys
 # sys.path.insert(0, '')
-sys.path.insert(0, cf.__ROOT__)
+sys.path.insert(1, cf.__HAN_ROOT__)
 import han_sec_api as han
+sys.path.insert(2, cf.__NGRAM_ROOT__)
+import ngram_api as ngram
 
 class Response(object):
     def __init__(self):
@@ -73,6 +75,8 @@ class Detector(object):
         # 1. static detect
         ####################################################
 
+
+
         ####################################################
         # 2. run sandbox to get report
         ####################################################
@@ -94,6 +98,8 @@ class Detector(object):
 
         self.__res__.add_obj(task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
 
+
+
         ####################################################
         # 3. feed different dynamic detectors
         # -----------------
@@ -105,19 +111,24 @@ class Detector(object):
         #   engine__name        (string):   name of the engine
         ####################################################
 
-        # cuckoo virustotal detector
+        #### cuckoo virustotal detector
         obj_res = self.cuckoo_virustotal_detect(report)
         for engine_name in obj_res:
             engine_res = obj_res[engine_name]
             # for each engine, use this format to add its result to final response
             self.__res__.add_response(task_id, engine_res['is_malware'], engine_res['score'], engine_name, engine_res['msg'])
 
-        # HAN detector
+        #### HAN detector
         task_ids = [task_id]
         labels, scores, msg = self.HAN_detect(task_ids)
         # for i, task_id in enumerate(task_ids):
         #     self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec')
         self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
+
+        #### n-gram detector 
+        ngram.creator()
+        ngram.infer()
+
 
         scan_time = time.time()-self.begin_time
         print('time', scan_time)

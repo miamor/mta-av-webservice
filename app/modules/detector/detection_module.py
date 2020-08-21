@@ -68,7 +68,7 @@ class Response(object):
 class Detector(object):
     def __init__(self):
         self.han = None
-        self.ngram = NGRAM_module(moedl_path=cf.NGRAM_MODEL_PATH)
+        self.ngram = NGRAM_module(model_path=cf.NGRAM_MODEL_PATH)
 
         return
     
@@ -175,6 +175,7 @@ class Detector(object):
         #   engine__score       (float):    confidence/score/...
         #   engine__name        (string):   name of the engine
         ####################################################
+        print('~~~~~ run_ngram', file_paths, res_obj)
         self.__res__ = Response(res_obj)
 
         self.begin_time = time.time()

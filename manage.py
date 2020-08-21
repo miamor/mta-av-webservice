@@ -1,6 +1,9 @@
 from app import create_app
 import app.settings.cf as cf
 
+import warnings
+warnings.filterwarnings("ignore", message="Numerical issues were encountered ")
+
 app = create_app('dev')
 
 if __name__ == '__main__':

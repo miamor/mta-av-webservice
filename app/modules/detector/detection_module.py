@@ -67,6 +67,9 @@ class Response(object):
 
 class Detector(object):
     def __init__(self):
+        self.han = None
+        self.ngram = NGRAM_module(moedl_path=cf.NGRAM_MODEL_PATH)
+
         return
     
     def run(self, filenames, filepaths):
@@ -172,24 +175,20 @@ class Detector(object):
         #   engine__score       (float):    confidence/score/...
         #   engine__name        (string):   name of the engine
         ####################################################
-        self.ngram = NGRAM_module()
-
         self.__res__ = Response(res_obj)
 
         self.begin_time = time.time()
 
-        # task_ids = [task_id]
-        labels, scores, msg = self.HAN_detect(task_ids)
-        for i, task_id in enumerate(task_ids):
-            self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec')
-        # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
-
         #### n-gram detector 
         df = self.ngram.creator(file_paths, cf.N_GRAM_SIZE, len(file_paths), cf.FREQ_FILE)
-        self.ngram.infer(df)
+        labels = self.ngram.infer(df)
+
+        for i, task_id in enumerate(task_ids):
+            self.__res__.add_response(task_id, labels[i], 0, 'ngram')
+        # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
 
         scan_time = time.time()-self.begin_time
-        print('HAN time', scan_time)
+        print('NGRAM time', scan_time)
 
         return self.__res__.get(), scan_time
 

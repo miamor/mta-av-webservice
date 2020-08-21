@@ -18,7 +18,7 @@ class Response(object):
             self.engines_detected = res_obj[1]
         else:
             self.resp = {}
-            self.engines_detected = []
+            self.engines_detected = {}
     
     def add_obj(self, task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep):
         ''' Add detection result to response '''
@@ -41,6 +41,8 @@ class Response(object):
                 'sha512': sha512,
                 'ssdeep': ssdeep,
             }
+        if task_id not in self.engines_detected:
+            self.engines_detected[task_id] = []
     
     def add_response(self, task_id, is_malware, score, engine, msg=''):
         ''' Add detection result to response '''
@@ -53,8 +55,8 @@ class Response(object):
             'msg' : msg
         }
 
-        if is_malware == 1 and engine not in self.engines_detected:
-            self.engines_detected.append(engine)
+        if is_malware == 1 and engine not in self.engines_detected[task_id]:
+            self.engines_detected[task_id].append(engine)
 
     def get(self):
         return self.resp, self.engines_detected
@@ -88,7 +90,7 @@ class Detector(object):
             hash_value = hash_values[task_id]
             k += 1
 
-            print("***** report[task_id]", task_id, reports[task_id])
+            # print("***** report[task_id]", task_id, reports[task_id])
             # print("***** reports[task_id]['target']['file']~~~~~~~~", reports[task_id]['target']['file'])
             report_path = reports[task_id]['target']['file']['path']
             ftype = reports[task_id]['target']['file']['type']
@@ -102,16 +104,16 @@ class Detector(object):
             self.__res__.add_obj(task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
 
 
-        ####################################################
-        # 3. feed different dynamic detectors
-        # -----------------
-        # Each engine can return whatever format you want
-        # For each engine, use this format to add its result to final response
-        # __res__.add_response(task_id, engine__is_malware, engine__score, engine__name)
-        #   engine__is_malware  (int):      1:malware|0:benign
-        #   engine__score       (float):    confidence/score/...
-        #   engine__name        (string):   name of the engine
-        ####################################################
+            ####################################################
+            # 3. feed different dynamic detectors
+            # -----------------
+            # Each engine can return whatever format you want
+            # For each engine, use this format to add its result to final response
+            # __res__.add_response(task_id, engine__is_malware, engine__score, engine__name)
+            #   engine__is_malware  (int):      1:malware|0:benign
+            #   engine__score       (float):    confidence/score/...
+            #   engine__name        (string):   name of the engine
+            ####################################################
 
             # cuckoo virustotal detector
             obj_res = self.cuckoo_virustotal_detect(reports[task_id])
@@ -140,6 +142,7 @@ class Detector(object):
         self.han = HAN_module(task_ids)
 
         self.__res__ = Response(res_obj)
+        print('~~~~~ run_han', self.__res__.get())
 
         # HAN detector
         self.begin_time = time.time()

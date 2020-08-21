@@ -8,9 +8,11 @@ import app.settings.cf as cf
 import sys
 # sys.path.insert(0, '')
 sys.path.insert(1, cf.__HAN_ROOT__)
-import han_sec_api as han
+# import han_sec_api as han
+from han_sec_api import HAN_module
 sys.path.insert(2, cf.__NGRAM_ROOT__)
-import ngram_api as ngram
+# import ngram_api as ngram
+from ngram_api import NGRAM_module
 
 class Response(object):
     def __init__(self, res_obj=None):
@@ -19,7 +21,7 @@ class Response(object):
             self.engines_detected = res_obj[1]
         else:
             self.resp = {}
-            self.engines_detected = []
+            self.engines_detected = {}
     
     def add_obj(self, task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep):
         ''' Add detection result to response '''
@@ -42,6 +44,8 @@ class Response(object):
                 'sha512': sha512,
                 'ssdeep': ssdeep,
             }
+        if task_id not in self.engines_detected:
+            self.engines_detected[task_id] = []
     
     def add_response(self, task_id, is_malware, score, engine, msg=''):
         ''' Add detection result to response '''
@@ -54,8 +58,8 @@ class Response(object):
             'msg' : msg
         }
 
-        if is_malware == 1 and engine not in self.engines_detected:
-            self.engines_detected.append(engine)
+        if is_malware == 1 and engine not in self.engines_detected[task_id]:
+            self.engines_detected[task_id].append(engine)
 
     def get(self):
         return self.resp, self.engines_detected
@@ -89,7 +93,7 @@ class Detector(object):
             hash_value = hash_values[task_id]
             k += 1
 
-            print("***** report[task_id]", task_id, reports[task_id])
+            # print("***** report[task_id]", task_id, reports[task_id])
             # print("***** reports[task_id]['target']['file']~~~~~~~~", reports[task_id]['target']['file'])
             report_path = reports[task_id]['target']['file']['path']
             ftype = reports[task_id]['target']['file']['type']
@@ -141,8 +145,8 @@ class Detector(object):
         self.han = HAN_module(task_ids)
 
         self.__res__ = Response(res_obj)
+        print('~~~~~ run_han', self.__res__.get())
 
-        # HAN detector
         self.begin_time = time.time()
 
         # task_ids = [task_id]
@@ -158,9 +162,20 @@ class Detector(object):
 
 
     def run_ngram(self, file_paths, task_ids, res_obj):
+        ####################################################
+        # 3. feed different dynamic detectors (ngram)
+        # -----------------
+        # Each engine can return whatever format you want
+        # For each engine, use this format to add its result to final response
+        # __res__.add_response(task_id, engine__is_malware, engine__score, engine__name)
+        #   engine__is_malware  (int):      1:malware|0:benign
+        #   engine__score       (float):    confidence/score/...
+        #   engine__name        (string):   name of the engine
+        ####################################################
+        self.ngram = NGRAM_module()
+
         self.__res__ = Response(res_obj)
 
-        # HAN detector
         self.begin_time = time.time()
 
         # task_ids = [task_id]
@@ -169,14 +184,14 @@ class Detector(object):
             self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec')
         # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
 
+        #### n-gram detector 
+        df = self.ngram.creator(file_paths, cf.N_GRAM_SIZE, len(file_paths), cf.FREQ_FILE)
+        self.ngram.infer(df)
+
         scan_time = time.time()-self.begin_time
         print('HAN time', scan_time)
 
         return self.__res__.get(), scan_time
-
-        #### n-gram detector 
-        ngram.creator(file_paths, n_gram_size, num_files, freq_file)
-        ngram.infer()
 
 
 

@@ -17,18 +17,20 @@ from ngram_api import NGRAM_module
 class Response(object):
     def __init__(self, res_obj=None):
         if res_obj is not None:
-            self.resp = res_obj[0]
+            self.res = res_obj[0]
             self.engines_detected = res_obj[1]
+            self.detector_output = res_obj[2]
         else:
-            self.resp = {}
+            self.res = {}
             self.engines_detected = {}
+            self.detector_output = {}
     
     def add_obj(self, task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep):
         ''' Add detection result to response '''
-        if task_id not in self.resp:
+        if task_id not in self.res:
             print('add_obj: ~~~~ ', task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
 
-            self.resp[task_id] = {
+            self.res[task_id] = {
                 'filename' : filename,
                 'hash_type' : cf.hash_type,
                 'hash_value' : hash_value,
@@ -43,18 +45,28 @@ class Response(object):
                 'sha256': sha256,
                 'sha512': sha512,
                 'ssdeep': ssdeep,
+
+                'is_malware': 0,
             }
         if task_id not in self.engines_detected:
             self.engines_detected[task_id] = []
+        if task_id not in self.detector_output:
+            self.detector_output[task_id] = {}
     
-    def add_response(self, task_id, is_malware, score, engine, msg=''):
+    def add_response(self, task_id, is_malware, score, engine, scan_time, msg=''):
         ''' Add detection result to response '''
         if is_malware == 1:
-            self.resp[task_id]['is_malware'] = 1
+            self.res[task_id]['is_malware'] = 1
 
-        self.resp[task_id][engine] = {
+        # self.res[task_id][engine] = {
+        #     'is_malware' : is_malware,
+        #     'score' : score,
+        #     'msg' : msg
+        # }
+        self.detector_output[task_id][engine] = {
             'is_malware' : is_malware,
             'score' : score,
+            'scan_time': scan_time,
             'msg' : msg
         }
 
@@ -62,7 +74,7 @@ class Response(object):
             self.engines_detected[task_id].append(engine)
 
     def get(self):
-        return self.resp, self.engines_detected
+        return self.res, self.engines_detected, self.detector_output
 
 
 class Detector(object):
@@ -115,7 +127,7 @@ class Detector(object):
             # -----------------
             # Each engine can return whatever format you want
             # For each engine, use this format to add its result to final response
-            # __res__.add_response(task_id, engine__is_malware, engine__score, engine__name)
+            # __res__.add_response(task_id, engine__is_malware, engine__score, engine__name, engine__scan_time, engine__msg)
             #   engine__is_malware  (int):      1:malware|0:benign
             #   engine__score       (float):    confidence/score/...
             #   engine__name        (string):   name of the engine
@@ -126,7 +138,7 @@ class Detector(object):
             for engine_name in obj_res:
                 engine_res = obj_res[engine_name]
                 # for each engine, use this format to add its result to final response
-                self.__res__.add_response(task_id, engine_res['is_malware'], engine_res['score'], engine_name, engine_res['msg'])
+                self.__res__.add_response(task_id, engine_res['is_malware'], engine_res['score'], engine_name, time.time()-self.begin_time, engine_res['msg'])
 
         scan_time = time.time()-self.begin_time
         print('time', scan_time)
@@ -155,7 +167,7 @@ class Detector(object):
         # task_ids = [task_id]
         labels, scores, msg = self.HAN_detect(task_ids)
         for i, task_id in enumerate(task_ids):
-            self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec')
+            self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec', time.time()-self.begin_time)
         # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
 
         scan_time = time.time()-self.begin_time
@@ -175,16 +187,17 @@ class Detector(object):
         #   engine__score       (float):    confidence/score/...
         #   engine__name        (string):   name of the engine
         ####################################################
+        print('~~~~~ run_ngram', file_paths, res_obj)
         self.__res__ = Response(res_obj)
 
         self.begin_time = time.time()
 
         #### n-gram detector 
         df = self.ngram.creator(file_paths, cf.N_GRAM_SIZE, len(file_paths), cf.FREQ_FILE)
-        labels = self.ngram.infer(df)
+        labels = [int(val) for val in self.ngram.infer(df)]
 
         for i, task_id in enumerate(task_ids):
-            self.__res__.add_response(task_id, labels[i], 0, 'ngram')
+            self.__res__.add_response(task_id, labels[i], 0, 'ngram', time.time()-self.begin_time)
         # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
 
         scan_time = time.time()-self.begin_time
@@ -288,11 +301,18 @@ class Detector(object):
             return [0]*num_task, [0]*num_task, ['Graph can\'t be created!']*num_task
         else:
             print('task_ids', task_ids)
-            print('len data', len(data))
+            # print('len data', len(data))
             labels, scores = self.han.predict_files(data, cuda=False)
             labels = labels.cpu().numpy().tolist()
             scores = scores.cpu().numpy().tolist()
             print('labels, scores', labels, scores)
+
+            # A little trick to decrease far
+            for i, score in enumerate(scores):
+                if score < 0.75 and labels[i] == 1:
+                    labels[i] = 0
+                    scores[i] = 1 - scores[i]
+            
             return labels, scores, None
         
         return None, None, None

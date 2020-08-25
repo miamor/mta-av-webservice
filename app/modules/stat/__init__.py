@@ -1,1 +1,0 @@
-from .view_stat import api as ns_stat

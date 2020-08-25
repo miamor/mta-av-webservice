@@ -68,7 +68,7 @@ class Response(object):
 class Detector(object):
     def __init__(self):
         self.han = None
-        self.ngram = NGRAM_module(moedl_path=cf.NGRAM_MODEL_PATH)
+        self.ngram = NGRAM_module(model_path=cf.NGRAM_MODEL_PATH)
 
         return
     

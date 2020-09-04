@@ -84,6 +84,13 @@ class Detector(object):
 
         return
     
+    def run_(self, filenames, filepaths):
+        self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
+        self.__res__ = Response()
+        task_ids, _, _ = self.run_sandbox(filepaths, wait_report=False)
+        return task_ids, None, None
+
+
     def run(self, filenames, filepaths):
         self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
         self.__res__ = Response()
@@ -210,7 +217,7 @@ class Detector(object):
     def static_detector(self, filepath):
         return
     
-    def run_sandbox(self, filepaths):
+    def run_sandbox(self, filepaths, wait_report=True):
         done_report = []
         total_tasks = len(filepaths)
         task_ids = []
@@ -225,6 +232,10 @@ class Detector(object):
                 return jsonify({"status": "error", "status_msg": "Create task for file {} failed.".format(filepath)})
             
             task_ids.append(task_id)
+        
+        if wait_report is False:
+            return task_ids, None, None
+
 
         # Now wait until task is complete
         # Keep checking status

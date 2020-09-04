@@ -33,7 +33,7 @@ if True:
 
             # Add your code to error checking for r.status_code.
 
-            task_id = r.json()["task_id"]
-            print(count, filepath, 'submitted. Task ', task_id)
+            task_ids = r.json()
+            print(count, filepath, 'submitted. Task ', task_ids)
 
             # Add your code for error checking if task_id is None.

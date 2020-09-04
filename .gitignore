@@ -6,6 +6,8 @@ Update/
 Update/*
 **/uploads
 **/Update
+data**
+**/data**
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

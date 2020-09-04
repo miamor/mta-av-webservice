@@ -294,7 +294,8 @@ class Detector(object):
     def HAN_detect(self, task_ids):
         num_task = len(task_ids)
         # data, args = prepare_files([9])
-        data = self.han.prepare_files(task_ids, cuda=False)
+        # data = self.han.prepare_files(task_ids, cuda=False)
+        data = self.han.prepare_files(cuda=False)
         print('*** data', data)
         if data is None:
             print('Graph can\'t be created!')
@@ -307,11 +308,18 @@ class Detector(object):
             scores = scores.cpu().numpy().tolist()
             print('labels, scores', labels, scores)
 
-            # A little trick to decrease far
+            # A little trick to decrease far (if use new model)
             for i, score in enumerate(scores):
                 if score < 0.75 and labels[i] == 1:
                     labels[i] = 0
                     scores[i] = 1 - scores[i]
+
+            # If use old model, output score is not probability, 
+            # then compare with a value (say 3)
+            # for i, score in enumerate(scores):
+            #     if score < 3 and labels[i] == 1:
+            #         labels[i] = 0
+            #         scores[i] = -1000 * scores[i]
             
             return labels, scores, None
         

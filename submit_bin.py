@@ -11,7 +11,7 @@ cuckoo_timeout = 120
 # REST_URL = cuckoo_API+"/tasks/create/file"
 # HEADERS = {"Authorization": cuckoo_SECRET_KEY}
 
-SUBMIT_URL = 'http://{}:{}/gen_report'.format(host, port)
+SUBMIT_URL = 'http://{}:{}/api/v1/capture/gen_report'.format(host, port)
 
 BIN_ROOT = '../../MTAAV_data/bin/new_a_Dung'
 count = 0

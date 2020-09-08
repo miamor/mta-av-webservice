@@ -84,13 +84,6 @@ class Detector(object):
 
         return
     
-    def run_(self, filenames, filepaths):
-        self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
-        self.__res__ = Response()
-        task_ids, _, _ = self.run_sandbox(filepaths, wait_report=False)
-        return task_ids, None, None
-
-
     def run(self, filenames, filepaths):
         self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
         self.__res__ = Response()
@@ -167,13 +160,22 @@ class Detector(object):
         self.han = HAN_module(task_ids)
 
         self.__res__ = Response(res_obj)
-        print('~~~~~ run_han', self.__res__.get())
+        # print('~~~~~ run_han', self.__res__.get())
+        print('~~~~~ run_han', res_obj)
 
         self.begin_time = time.time()
-
+        
         # task_ids = [task_id]
         labels, scores, msg = self.HAN_detect(task_ids)
         for i, task_id in enumerate(task_ids):
+            # A little trick to decrease far
+            if scores[i] < 0.75 and labels[i] == 1:
+                labels[i] = 0
+                scores[i] = 1 - scores[i]
+            elif res_obj[2][task_id]['virustotal']['is_malware'] == 0:
+                labels[i] = 0
+                scores[i] = 0 - scores[i]
+
             self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec', time.time()-self.begin_time)
         # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
 
@@ -217,7 +219,7 @@ class Detector(object):
     def static_detector(self, filepath):
         return
     
-    def run_sandbox(self, filepaths, wait_report=True):
+    def run_sandbox(self, filepaths):
         done_report = []
         total_tasks = len(filepaths)
         task_ids = []
@@ -232,10 +234,6 @@ class Detector(object):
                 return jsonify({"status": "error", "status_msg": "Create task for file {} failed.".format(filepath)})
             
             task_ids.append(task_id)
-        
-        if wait_report is False:
-            return task_ids, None, None
-
 
         # Now wait until task is complete
         # Keep checking status
@@ -319,19 +317,6 @@ class Detector(object):
             scores = scores.cpu().numpy().tolist()
             print('labels, scores', labels, scores)
 
-            # A little trick to decrease far (if use new model)
-            for i, score in enumerate(scores):
-                if score < 0.75 and labels[i] == 1:
-                    labels[i] = 0
-                    scores[i] = 1 - scores[i]
-
-            # If use old model, output score is not probability, 
-            # then compare with a value (say 3)
-            # for i, score in enumerate(scores):
-            #     if score < 3 and labels[i] == 1:
-            #         labels[i] = 0
-            #         scores[i] = -1000 * scores[i]
-            
             return labels, scores, None
         
         return None, None, None

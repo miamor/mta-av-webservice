@@ -2,13 +2,13 @@ app/settings/cf.py
 **/**/cf.py
 uploads/
 uploads/*
+api_tasks
+api_tasks/*
 Update/
 Update/*
 **/uploads
+**/api_tasks
 **/Update
-data**
-**/data**
-
 data**
 **/data**
 

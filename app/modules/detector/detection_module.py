@@ -13,6 +13,10 @@ from han_sec_api import HAN_module
 sys.path.insert(2, cf.__NGRAM_ROOT__)
 # import ngram_api as ngram
 from ngram_api import NGRAM_module
+sys.path.insert(3, cf.__IMG_BYTES_API_ROOT__)
+from api_img_bytes import CNN_Img_Module
+sys.path.insert(4, cf.__ASM_API_ROOT__)
+from api_asm import Asm_Module
 
 class Response(object):
     def __init__(self, res_obj=None):
@@ -81,9 +85,12 @@ class Detector(object):
     def __init__(self):
         self.han = None
         self.ngram = NGRAM_module(model_path=cf.NGRAM_MODEL_PATH)
+        self.img_bytes_module = CNN_Img_Module(img_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_img/models/rgb.h5', cnn_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/cnn_best__7500_1259.h5', lstm_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/lstm_best__7240_1259.h5')
+        self.asm_module = Asm_Module(cnn_model_path=cf.__ASM_API_ROOT__+'/output/cnn_best__9635_1778.h5', lstm_model_path=cf.__ASM_API_ROOT__+'/output/lstm_best__9427_1926.h5')
 
         return
-    
+
+
     def run(self, filenames, filepaths):
         self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
         self.__res__ = Response()
@@ -160,8 +167,7 @@ class Detector(object):
         self.han = HAN_module(task_ids)
 
         self.__res__ = Response(res_obj)
-        # print('~~~~~ run_han', self.__res__.get())
-        print('~~~~~ run_han', res_obj)
+        print('* [run_han]', res_obj)
 
         self.begin_time = time.time()
         
@@ -175,12 +181,15 @@ class Detector(object):
             elif res_obj[2][task_id]['virustotal']['is_malware'] == 0:
                 labels[i] = 0
                 scores[i] = 0 - scores[i]
+            elif res_obj[2][task_id]['virustotal']['is_malware'] == 1 and labels[i] == 0:
+                labels[i] = 1
+                scores[i] = 0 - scores[i]
 
             self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec', time.time()-self.begin_time)
         # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
 
         scan_time = time.time()-self.begin_time
-        print('HAN time', scan_time)
+        print('[run_han] HAN time', scan_time)
 
         return self.__res__.get(), scan_time
 
@@ -196,7 +205,7 @@ class Detector(object):
         #   engine__score       (float):    confidence/score/...
         #   engine__name        (string):   name of the engine
         ####################################################
-        print('~~~~~ run_ngram', file_paths, res_obj)
+        print('* [run_ngram]', file_paths, res_obj)
         self.__res__ = Response(res_obj)
 
         self.begin_time = time.time()
@@ -207,13 +216,78 @@ class Detector(object):
 
         for i, task_id in enumerate(task_ids):
             self.__res__.add_response(task_id, labels[i], 0, 'ngram', time.time()-self.begin_time)
-        # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
 
         scan_time = time.time()-self.begin_time
-        print('NGRAM time', scan_time)
+        print('[run_ngram] NGRAM time', scan_time)
 
         return self.__res__.get(), scan_time
 
+
+    def run_img_bytes(self, file_paths, task_ids, res_obj):
+        ####################################################
+        # 3. feed different dynamic detectors (ngram)
+        # -----------------
+        # Each engine can return whatever format you want
+        # For each engine, use this format to add its result to final response
+        # __res__.add_response(task_id, engine__is_malware, engine__score, engine__name)
+        #   engine__is_malware  (int):      1:malware|0:benign
+        #   engine__score       (float):    confidence/score/...
+        #   engine__name        (string):   name of the engine
+        ####################################################
+        print('* [run_img_bytes]', file_paths, res_obj)
+        self.__res__ = Response(res_obj)
+
+        self.begin_time = time.time()
+
+        #### cnn img, cnn bytes, lstm bytes detector 
+        module_res = self.img_bytes_module.from_files(file_paths, task_ids=task_ids, output_directory=cf.__IMG_BYTES_API_ROOT__+'/api_tasks/__prepared_RGB')
+
+        for engine in module_res:
+            labels, scores = module_res[engine]
+            labels = labels.tolist()
+            scores = scores.tolist()
+
+            for i, task_id in enumerate(task_ids):
+                self.__res__.add_response(task_id, labels[i], scores[i], engine, time.time()-self.begin_time)
+
+        scan_time = time.time()-self.begin_time
+        print('[run_img_bytes] CNN_img_bytes time', scan_time)
+
+        return self.__res__.get(), scan_time
+
+
+
+    def run_asm(self, file_paths, task_ids, res_obj):
+        ####################################################
+        # 3. feed different dynamic detectors (ngram)
+        # -----------------
+        # Each engine can return whatever format you want
+        # For each engine, use this format to add its result to final response
+        # __res__.add_response(task_id, engine__is_malware, engine__score, engine__name)
+        #   engine__is_malware  (int):      1:malware|0:benign
+        #   engine__score       (float):    confidence/score/...
+        #   engine__name        (string):   name of the engine
+        ####################################################
+        print('* [run_asm]', file_paths, res_obj)
+        self.__res__ = Response(res_obj)
+
+        self.begin_time = time.time()
+
+        #### cnn, lstm asm detector 
+        module_res = self.asm_module.from_files(file_paths, task_ids=task_ids)
+
+        for engine in module_res:
+            labels, scores = module_res[engine]
+            labels = labels.tolist()
+            scores = scores.tolist()
+
+            for i, task_id in enumerate(task_ids):
+                self.__res__.add_response(task_id, labels[i], scores[i], engine, time.time()-self.begin_time)
+
+        scan_time = time.time()-self.begin_time
+        print('[run_asm] CNN_asm, LSTM_asm time', scan_time)
+
+        return self.__res__.get(), scan_time
 
 
     def static_detector(self, filepath):
@@ -270,23 +344,24 @@ class Detector(object):
             'score': 0,
             'msg': ''
         }
-        virustotal_detected = 0
-        virustotal_tot_engine = 0
-        # print('task', task)
-        if 'scans' in task['virustotal']:
-            for engine_name in task['virustotal']['scans']:
-                engine_res = task['virustotal']['scans'][engine_name]
-                # print('engine_res', engine_res)
-                virustotal_tot_engine += 1
-                if engine_res['detected'] is True:
-                    virustotal_detected += 1
-        if virustotal_tot_engine > 0:
-            virustotal_res['score'] = virustotal_detected / virustotal_tot_engine
-            virustotal_res['msg'] = '{}/{} engines detected as malware'.format(virustotal_detected, virustotal_tot_engine)
-            if virustotal_res['score'] > 0.4:
-                virustotal_res['is_malware'] = 1
-        else:
-            virustotal_res['msg'] = 'No virustotal scans found'
+        print('[cuckoo_virustotal_detect] task', task)
+        if 'virustotal' in task:
+            virustotal_detected = 0
+            virustotal_tot_engine = 0
+            if 'scans' in task['virustotal']:
+                for engine_name in task['virustotal']['scans']:
+                    engine_res = task['virustotal']['scans'][engine_name]
+                    # print('engine_res', engine_res)
+                    virustotal_tot_engine += 1
+                    if engine_res['detected'] is True:
+                        virustotal_detected += 1
+            if virustotal_tot_engine > 0:
+                virustotal_res['score'] = virustotal_detected / virustotal_tot_engine
+                virustotal_res['msg'] = '{}/{} engines detected as malware'.format(virustotal_detected, virustotal_tot_engine)
+                if virustotal_res['score'] > 0.4:
+                    virustotal_res['is_malware'] = 1
+            else:
+                virustotal_res['msg'] = 'No virustotal scans found'
 
         cuckoo_res = {
             'is_malware': int(task_info['score'] > 0),
@@ -321,3 +396,18 @@ class Detector(object):
         
         return None, None, None
 
+
+
+    
+    def run_(self, filenames, filepaths):
+        self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
+        
+        # Run analysis
+        for filepath in filepaths:
+            task_id = self.sandbox.start_analysis(filepath)
+            # print("task_id", task_id)
+
+            if task_id is None:
+                return jsonify({"status": "error", "status_msg": "Create task for file {} failed.".format(filepath)})
+            else:
+                return jsonify({"status": "success", "status_msg": "Created task for file {}. {}".format(filepath, task_id)})

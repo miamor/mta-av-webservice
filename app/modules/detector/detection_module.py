@@ -175,15 +175,20 @@ class Detector(object):
         labels, scores, msg = self.HAN_detect(task_ids)
         for i, task_id in enumerate(task_ids):
             # A little trick to decrease far
-            if scores[i] < 0.75 and labels[i] == 1:
-                labels[i] = 0
-                scores[i] = 1 - scores[i]
-            elif res_obj[2][task_id]['virustotal']['is_malware'] == 0:
-                labels[i] = 0
-                scores[i] = 0 - scores[i]
-            elif res_obj[2][task_id]['virustotal']['is_malware'] == 1 and labels[i] == 0:
+            if res_obj[2][task_id]['cuckoo']['is_malware'] == 1 and labels[i] == 0:
                 labels[i] = 1
-                scores[i] = 0 - scores[i]
+                scores[i] = 0-scores[i]
+            # elif scores[i] < 0.75 and labels[i] == 1:
+            #     labels[i] = 0
+            #     scores[i] = 1 - scores[i]
+            # labels[i] = res_obj[2][task_id]['cuckoo']['is_malware']
+
+            # elif res_obj[2][task_id]['virustotal']['is_malware'] == 0:
+            #     labels[i] = 0
+            #     scores[i] = 0 - scores[i]
+            # elif res_obj[2][task_id]['virustotal']['is_malware'] == 1 and labels[i] == 0:
+            #     labels[i] = 1
+            #     scores[i] = 0 - scores[i]
 
             self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec', time.time()-self.begin_time)
         # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
@@ -364,7 +369,7 @@ class Detector(object):
                 virustotal_res['msg'] = 'No virustotal scans found'
 
         cuckoo_res = {
-            'is_malware': int(task_info['score'] > 0),
+            'is_malware': int(task_info['score'] >= 3.5),
             'score': task_info['score'],
             'msg': ''
         }

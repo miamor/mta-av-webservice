@@ -84,15 +84,16 @@ class Response(object):
 class Detector(object):
     def __init__(self):
         self.han = None
-        self.ngram = NGRAM_module(model_path=cf.NGRAM_MODEL_PATH)
-        self.img_bytes_module = CNN_Img_Module(img_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_img/models/rgb.h5', cnn_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/cnn_best__7500_1259.h5', lstm_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/lstm_best__7240_1259.h5')
-        self.asm_module = Asm_Module(cnn_model_path=cf.__ASM_API_ROOT__+'/output/cnn_best__9635_1778.h5', lstm_model_path=cf.__ASM_API_ROOT__+'/output/lstm_best__9427_1926.h5')
+        # self.ngram = NGRAM_module(model_path=cf.NGRAM_MODEL_PATH)
+        # self.img_bytes_module = CNN_Img_Module(img_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_img/models/rgb.h5', cnn_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/cnn_best__7500_1259.h5', lstm_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/lstm_best__7240_1259.h5')
+        # self.asm_module = Asm_Module(cnn_model_path=cf.__ASM_API_ROOT__+'/output/cnn_best__9635_1778.h5', lstm_model_path=cf.__ASM_API_ROOT__+'/output/lstm_best__9427_1926.h5')
+
+        self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
 
         return
 
 
-    def run(self, filenames, filepaths):
-        self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
+    def run(self, filepaths, task_ids):
         self.__res__ = Response()
 
 
@@ -105,26 +106,30 @@ class Detector(object):
 
 
         ####################################################
-        # 2. run sandbox to get report
+        # 2. get report from task_id
         ####################################################
-        task_ids, hash_values, reports = self.run_sandbox(filepaths)
+        # task_ids, hash_values, reports = self.run_sandbox_and_wait(filepaths)
 
         k = 0
         for task_id in task_ids:
-            filename = filenames[k]
-            hash_value = hash_values[task_id]
+            filename = filepaths[k].split('/')[-1]
+            # filename = filenames[k]
+            report = self.sandbox.get_report(task_id)
+            hash_value = report['sample'][cf.hash_type]
+
+            # hash_value = hash_values[task_id]
             k += 1
 
-            # print("***** report[task_id]", task_id, reports[task_id])
-            # print("***** reports[task_id]['target']['file']~~~~~~~~", reports[task_id]['target']['file'])
-            report_path = reports[task_id]['target']['file']['path']
-            ftype = reports[task_id]['target']['file']['type']
-            md5 = reports[task_id]['target']['file']['md5']
-            sha1 = reports[task_id]['target']['file']['sha1']
-            sha256 = reports[task_id]['target']['file']['sha256']
-            sha512 = reports[task_id]['target']['file']['sha512']
-            ssdeep = reports[task_id]['target']['file']['ssdeep']
-            fsize = reports[task_id]['target']['file']['size']
+            # print("***** report[task_id]", task_id, report)
+            # print("***** report['target']['file']~~~~~~~~", report['target']['file'])
+            report_path = report['target']['file']['path']
+            ftype = report['target']['file']['type']
+            md5 = report['target']['file']['md5']
+            sha1 = report['target']['file']['sha1']
+            sha256 = report['target']['file']['sha256']
+            sha512 = report['target']['file']['sha512']
+            ssdeep = report['target']['file']['ssdeep']
+            fsize = report['target']['file']['size']
 
             self.__res__.add_obj(task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
 
@@ -141,7 +146,7 @@ class Detector(object):
             ####################################################
 
             # cuckoo virustotal detector
-            obj_res = self.cuckoo_virustotal_detect(reports[task_id])
+            obj_res = self.cuckoo_virustotal_detect(report)
             for engine_name in obj_res:
                 engine_res = obj_res[engine_name]
                 # for each engine, use this format to add its result to final response
@@ -175,9 +180,9 @@ class Detector(object):
         labels, scores, msg = self.HAN_detect(task_ids)
         for i, task_id in enumerate(task_ids):
             # A little trick to decrease far
-            if res_obj[2][task_id]['cuckoo']['is_malware'] == 1 and labels[i] == 0:
-                labels[i] = 1
-                scores[i] = 0-scores[i]
+            # if res_obj[2][task_id]['cuckoo']['is_malware'] == 1 and labels[i] == 0:
+            #     labels[i] = 1
+            #     scores[i] = 0-scores[i]
             # elif scores[i] < 0.75 and labels[i] == 1:
             #     labels[i] = 0
             #     scores[i] = 1 - scores[i]
@@ -298,7 +303,10 @@ class Detector(object):
     def static_detector(self, filepath):
         return
     
-    def run_sandbox(self, filepaths):
+    def run_sandbox(self, filepath):
+        return self.sandbox.start_analysis(filepath)
+    
+    def run_sandbox_and_wait(self, filepaths):
         done_report = []
         total_tasks = len(filepaths)
         task_ids = []

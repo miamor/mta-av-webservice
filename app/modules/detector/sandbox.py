@@ -22,7 +22,7 @@ class Sandbox_API(object):
 
         # Add your code to error checking for r.status_code.
         task_id = r.json()["task_id"]
-        print('** Created task for CUckoo: ', task_id)
+        print('** Created task for Cuckoo: ', task_id)
 
         # Add your code for error checking if task_id is None.
 

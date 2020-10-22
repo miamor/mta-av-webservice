@@ -19,10 +19,9 @@ class UrlList(Resource):
     @api.marshal_list_with(capture)
     def get(self):
         data = request.args
-        mode = data['mode'] if 'mode' in data else ''
         controller = ControllerUrl()
-        print('data', data)
-        return controller.get(mode=mode, filters=data)
+        print('[/url] GET', data)
+        return controller.get(filters=data)
 
     @api.expect(capture)
     @api.marshal_with(capture)
@@ -31,7 +30,7 @@ class UrlList(Resource):
         # data = request.form.to_dict(flat=True)
         data = request.get_json()
         data['hash'] = data['md5']
-        print('data post METHOD~~~~', data)
+        print('[/url] POST', data)
         controller = ControllerUrl()
         return controller.create(data=data)
 
@@ -42,13 +41,13 @@ class UrlCheck(Resource):
     def post(self):
         #print('request.form', request.form)
         post_data = request.json
-        #print('post_data', post_data)
+        print('[/url/checkurl] POST', post_data)
         #urls = post_data['urls'] if urls in post_data else []
         urls = json.loads(post_data)['urls']
         is_malicious_urls = []
         if len(urls) > 0:
             is_malicious_urls = urlclassifier.classifier(urls).tolist()
-        #print('is_malicious_urls', is_malicious_urls)
+        print('[/url/checkurl] is_malicious_urls', is_malicious_urls)
         resp = jsonify({
             "status": "success",
             "urls": urls,

@@ -40,14 +40,24 @@ class UrlCheck(Resource):
     # @api.marshal_with(capture)
     def post(self):
         #print('request.form', request.form)
-        post_data = request.json
+        post_data = json.loads(request.json)
         print('[/url/checkurl] POST', post_data)
+        
         #urls = post_data['urls'] if urls in post_data else []
-        urls = json.loads(post_data)['urls']
+        urls = post_data['urls']
         is_malicious_urls = []
         if len(urls) > 0:
             is_malicious_urls = urlclassifier.classifier(urls).tolist()
         print('[/url/checkurl] is_malicious_urls', is_malicious_urls)
+        
+        controller = ControllerUrl()
+        for i in range(len(urls)):
+            data = {
+                'url': urls[i],
+                'is_malicious': is_malicious_urls[i]
+            }
+            controller.create(data=data)
+        
         resp = jsonify({
             "status": "success",
             "urls": urls,

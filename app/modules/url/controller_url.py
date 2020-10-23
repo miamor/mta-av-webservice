@@ -1,5 +1,5 @@
 from app.modules.common.controller import Controller
-from .capture import Url
+from .url import Url
 from app.app import db
 from app.settings.config import Config
 import datetime
@@ -32,7 +32,7 @@ class ControllerUrl(Controller):
             cond_str = 'where ' + (' and '.join(cond))
         else:
             cond_str = ''
-        cmd = "select url_capture_id, url, source_ip, protocol, date_requested, time_requested, is_malicious, score from capture " + \
+        cmd = "select url_capture_id, url, source_ip, protocol, date_requested, time_requested, is_malicious, score from capture_url " + \
             cond_str+" order by date_requested desc, time_requested desc"
         print('cmd', cmd)
 

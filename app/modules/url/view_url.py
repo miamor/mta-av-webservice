@@ -42,7 +42,7 @@ class UrlCheck(Resource):
         #print('request.form', request.form)
         post_data = json.loads(request.json)
         print('[/url/checkurl] POST', post_data)
-        
+
         #urls = post_data['urls'] if urls in post_data else []
         urls = post_data['urls']
         is_malicious_urls = []
@@ -52,11 +52,12 @@ class UrlCheck(Resource):
         
         controller = ControllerUrl()
         for i in range(len(urls)):
-            data = {
-                'url': urls[i],
-                'is_malicious': is_malicious_urls[i]
-            }
-            controller.create(data=data)
+            if is_malicious_urls[i] == 1:
+                data = {
+                    'url': urls[i],
+                    'is_malicious': is_malicious_urls[i]
+                }
+                controller.create(data=data)
         
         resp = jsonify({
             "status": "success",

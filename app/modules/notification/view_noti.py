@@ -1,7 +1,7 @@
 from flask_restplus import Resource
 # from app.modules.common.decorator import token_required, admin_token_required
-from .dto_url import DtoNoti
-from .controller_url import ControllerNoti
+from .dto_noti import DtoNoti
+from .controller_noti import ControllerNoti
 from flask import request, jsonify, abort
 import app.settings.cf as cf
 import json

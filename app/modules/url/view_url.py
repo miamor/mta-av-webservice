@@ -85,3 +85,9 @@ class Url(Resource):
         controller = ControllerUrl()
         return controller.delete(object_id=cid)
 
+
+@api.route('/stat')
+class Url(Resource):
+    def get(self):
+        controller = ControllerUrl()
+        return controller.stat()

@@ -35,8 +35,12 @@ class Sandbox_API(object):
 
         r = requests.get(REST_URL, headers=HEADERS)
 
-        task = r.json()["task"]
-        # print('task', task)
+        task = r.json()
+        print('task', task)
+        if 'task' not in task:
+            return 'error', 'Error', task
+
+        task = task["task"]
 
         if 'errors' in task:
             return task['status'], task['errors'], task['sample'][self.hash_type]

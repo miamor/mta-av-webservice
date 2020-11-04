@@ -13,14 +13,6 @@ class ControllerUser(Controller):
     Controller to mamage all interaction to user table in database.
     """
 
-    def login(self, data):
-        email = data['email']
-        password_hash = data['password']
-        user = User.query.filter_by(email=email, password_hash=password_hash).first()
-        if user is None:
-            return None
-        return result(data=marshal(user, UserDto.model))  # user
-
     def create(self, data):
         """
         Tao nguoi dung moi

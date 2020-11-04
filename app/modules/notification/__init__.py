@@ -1,0 +1,1 @@
+from .view_url import api as ns_url

@@ -8,6 +8,7 @@ from app.settings.config import config_by_name
 import app.settings.cf as cf
 cf.detector = None
 cf.set_detector = False
+cf.is_running_detection = False
 
 db = SQLAlchemy()
 flask_bcrypt = Bcrypt()

@@ -15,7 +15,7 @@ class UserCount(Resource):
     def get(self):
         data = request.args
         controllerUser = ControllerUser()
-        cmd = controllerUser.get_query(filters={})
+        cmd = controllerUser.get_query(filters=None)
         return controllerUser.count_all(cmd=cmd)
 
 @api.route('')
@@ -27,8 +27,18 @@ class UserList(Resource):
         page = int(data['p']) if ('p' in data and data['p'] != 'undefined') else 0
 
         controllerUser = ControllerUser()
-        cmd = controllerUser.get_query(filters={})
+        cmd = controllerUser.get_query(filters=None)
         return controllerUser.get(cmd=cmd, page=page)
+
+    # @api.marshal_list_with(capture)
+    # def get(self):
+    #     data = request.args
+    #     mode = data['mode'] if 'mode' in data else ''
+    #     page = int(data['p']) if ('p' in data and data['p'] != 'undefined') else 0
+    #     controller = ControllerUrl()
+    #     # print('[/url/] GET data', data, 'page', page)
+    #     cmd = controller.get_query(mode=mode, filters=data)
+    #     return controller.get(cmd=cmd, page=page)
 
     @api.expect(_user, validate=True)
     @api.marshal_with(_user)

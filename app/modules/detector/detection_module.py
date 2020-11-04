@@ -83,7 +83,7 @@ class Response(object):
 
 class Detector(object):
     def __init__(self):
-        self.han = None
+        self.han = HAN_module(cuckoo_analysis_dir=__CUCKOO_REPORT_DIR__)
         # self.ngram = NGRAM_module(model_path=cf.NGRAM_MODEL_PATH)
         # self.img_bytes_module = CNN_Img_Module(img_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_img/models/rgb.h5', cnn_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/cnn_best__7500_1259.h5', lstm_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/lstm_best__7240_1259.h5')
         # self.asm_module = Asm_Module(cnn_model_path=cf.__ASM_API_ROOT__+'/output/cnn_best__9635_1778.h5', lstm_model_path=cf.__ASM_API_ROOT__+'/output/lstm_best__9427_1926.h5')
@@ -184,8 +184,6 @@ class Detector(object):
         #   engine__score       (float):    confidence/score/...
         #   engine__name        (string):   name of the engine
         ####################################################
-        self.han = HAN_module(task_ids)
-
         self.__res__ = Response(res_obj)
         print('* [run_han]', res_obj)
 
@@ -376,7 +374,7 @@ class Detector(object):
             'score': 0,
             'msg': ''
         }
-        print('[cuckoo_virustotal_detect] task', task)
+        # print('[cuckoo_virustotal_detect] task', task)
         if 'virustotal' in task:
             virustotal_detected = 0
             virustotal_tot_engine = 0
@@ -411,14 +409,13 @@ class Detector(object):
         num_task = len(task_ids)
         # data, args = prepare_files([9])
         # data = self.han.prepare_files(task_ids, cuda=False)
-        data = self.han.prepare_files(cuda=False)
-        print('*** data', data)
+
+        self.han.set_task_ids(task_ids=task_ids)
+        data = self.han.prepare_files(cuda=False) # Microsoft.Build.Tasks.v4.0.dll
         if data is None:
             print('Graph can\'t be created!')
             return [0]*num_task, [0]*num_task, ['Graph can\'t be created!']*num_task
         else:
-            print('task_ids', task_ids)
-            # print('len data', len(data))
             labels, scores = self.han.predict_files(data, cuda=False)
             labels = labels.cpu().numpy().tolist()
             scores = scores.cpu().numpy().tolist()
@@ -427,7 +424,6 @@ class Detector(object):
             return labels, scores, None
         
         return None, None, None
-
 
 
     

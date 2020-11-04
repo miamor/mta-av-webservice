@@ -9,6 +9,13 @@ api = UserDto.api
 # api = Routing.route_user
 _user = UserDto.model
 
+@api.route('/count')
+class UserCount(Resource):
+    def get(self):
+        data = request.args
+        controller = ControllerUser()
+        cmd = controller.get_query(filters=data)
+        return controller.count_all(cmd=cmd)
 
 @api.route('')
 class UserList(Resource):

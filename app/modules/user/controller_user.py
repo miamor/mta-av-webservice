@@ -7,6 +7,8 @@ from app.utils.response import error, result
 from app.modules.user.dto_user import UserDto
 from app.modules.common.controller import Controller
 
+from app.settings.config import Config
+
 
 class ControllerUser(Controller):
     """
@@ -36,18 +38,66 @@ class ControllerUser(Controller):
             print(e.__str__())
             return error(message='Could not create user. Check again.')  # False, None  # send_error(message=e)
 
-    def get(self):
-        """
-        Return all users in database
-        :return:
-        """
-        try:
-            users = User.query.all()
-            # return result(data=marshal(users, UserDto.model))
-            return users
-        except Exception as e:
-            print(e.__str__())
-            return error(message='Could not load users.')  # None  # send_error(message=e)
+    # def get(self):
+    #     """
+    #     Return all users in database
+    #     :return:
+    #     """
+    #     try:
+    #         users = User.query.all()
+    #         # return result(data=marshal(users, UserDto.model))
+    #         return users
+    #     except Exception as e:
+    #         print(e.__str__())
+    #         return error(message='Could not load users.')  # None  # send_error(message=e)
+
+    def get_query(self, filters=None):
+        cond = []
+
+        for key in filters:
+            if key not in ['types', 'mode', 'p', 'page']:
+                print(key, filters[key])
+                cond.append("{} = '{}'".format(key, filters[key]))
+
+        if len(cond) > 0:
+            cond_str = 'where ' + (' and '.join(cond))
+        else:
+            cond_str = ''
+
+        cmd = "select * from capture_url " + cond_str+" order by date_requested desc, time_requested desc"
+        # print('cmd', cmd)
+
+        return cmd
+
+    def count_all(self, cmd):
+        engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
+        connection = engine.connect()
+        cmd = 'select count(user_id) from '+cmd.split('from')[1]
+        print('[count_all] cmd', cmd)
+        total = connection.execute(cmd).scalar()
+        if total is None: 
+            return 0
+
+        total = int(total)
+        print('~~total', total)
+        return total
+
+    def get(self, cmd, page=0):
+        page_size = 30
+        start = page*page_size
+        end = (page+1)*page_size
+
+        cmd = cmd + " limit "+str(start)+", "+str(end)
+        print('** [get] cmd', cmd)
+
+        engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
+        connection = engine.connect()
+
+        users = connection.execute(cmd).fetchall()
+
+        return users
+
+
 
     def get_by_id(self, user_id):
         user = User.query.filter_by(user_id=user_id).first()

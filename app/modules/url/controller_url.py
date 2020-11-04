@@ -55,7 +55,7 @@ class ControllerUrl(Controller):
         engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
         connection = engine.connect()
         cmd = 'select count(url_capture_id) from '+cmd.split('from')[1]
-        print('[count_all] cmd', cmd)
+        # print('[count_all] cmd', cmd)
         total = connection.execute(cmd).scalar()
         if total is None: 
             return 0

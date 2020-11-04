@@ -58,7 +58,7 @@ class ControllerNoti(Controller):
             return 0
 
         total = int(total)
-        print('~~total', total)
+        # print('~~total', total)
         return total
 
     def get(self, cmd, page=0):

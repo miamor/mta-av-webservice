@@ -12,7 +12,7 @@ _user = UserDto.model
 
 @api.route('')
 class UserList(Resource):
-    @admin_token_required
+    # @admin_token_required
     @api.marshal_list_with(_user)
     def get(self):
         controllerUser = ControllerUser()
@@ -29,13 +29,13 @@ class UserList(Resource):
 
 @api.route('/<int:user_id>')
 class User(Resource):
-    @token_required
+    # @token_required
     @api.marshal_with(_user)
     def get(self, user_id):
         controller = ControllerUser()
         return controller.get_by_id(user_id=user_id)
 
-    @token_required
+    # @token_required
     @api.expect(_user, validate=True)
     def put(self, user_id):
         data = api.payload

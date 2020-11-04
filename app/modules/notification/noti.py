@@ -6,7 +6,7 @@ class Noti(Model):
     __tablename__ = "notification"
     noti_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
-    user_id = db.Integer(db.String, nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)
     message = db.Column(db.String)
     date_created = db.Column(db.String)
 

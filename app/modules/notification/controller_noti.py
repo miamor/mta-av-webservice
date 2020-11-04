@@ -28,12 +28,10 @@ class ControllerNoti(Controller):
 
         # cond = []
 
-        # for key in filters:
-        #     if key not in ['types', 'mode', 'p', 'page']:
-        #         print(key, filters[key])
-        #         if key == 'destination_ip' and filters[key] == '':
-        #             cond.append("(destination_ip = '' or destination_ip is NULL)")
-        #         else:
+        # if filters is not None:
+        #     for key in filters:
+        #         if key not in ['types', 'mode', 'p', 'page']:
+        #             print(key, filters[key])
         #             cond.append("{} = '{}'".format(key, filters[key]))
 
         # if 'destination_ip' not in filters:

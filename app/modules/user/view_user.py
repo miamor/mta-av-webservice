@@ -4,6 +4,7 @@ from flask_restplus import Resource, reqparse
 from app.modules.user.dto_user import UserDto
 from app.modules.common.decorator import admin_token_required, token_required
 from .controller_user import ControllerUser  # create_user, get_list_user, delete_user, update_user, get_list_blocked_user
+from flask import request, jsonify, abort
 
 api = UserDto.api
 # api = Routing.route_user
@@ -13,17 +14,21 @@ _user = UserDto.model
 class UserCount(Resource):
     def get(self):
         data = request.args
-        controller = ControllerUser()
-        cmd = controller.get_query(filters=data)
-        return controller.count_all(cmd=cmd)
+        controllerUser = ControllerUser()
+        cmd = controllerUser.get_query(filters={})
+        return controllerUser.count_all(cmd=cmd)
 
 @api.route('')
 class UserList(Resource):
     # @admin_token_required
     @api.marshal_list_with(_user)
     def get(self):
+        data = request.args
+        page = int(data['p']) if ('p' in data and data['p'] != 'undefined') else 0
+
         controllerUser = ControllerUser()
-        return controllerUser.get()  # get_list_user()
+        cmd = controllerUser.get_query(filters={})
+        return controllerUser.get(cmd=cmd, page=page)
 
     @api.expect(_user, validate=True)
     @api.marshal_with(_user)

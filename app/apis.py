@@ -1,6 +1,18 @@
 from flask_restplus import Api
 from app.modules import ns_user, ns_auth, ns_capture, ns_history, ns_url, ns_noti
 
+import app.settings.cf as cf
+# from multiprocessing import Process, Queue
+import threading, queue
+from app.modules.malware.controller_capture import ControllerCapture
+
+cf.controllerCapture = ControllerCapture()
+cf.detector = None
+cf.set_detector = False
+# cf.is_running_detection = False
+cf.waiting_tasks = queue.Queue()
+
+cf.controllerCapture.check()
 
 def init_api():
     api = Api(title='mtaSMaD APIs',

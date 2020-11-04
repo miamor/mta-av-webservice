@@ -3,8 +3,7 @@ from flask_restplus import Resource, reqparse
 
 from app.modules.user.dto_user import UserDto
 from app.modules.common.decorator import admin_token_required, token_required
-from .controller_user import \
-    ControllerUser  # create_user, get_list_user, delete_user, update_user, get_list_blocked_user
+from .controller_user import ControllerUser  # create_user, get_list_user, delete_user, update_user, get_list_blocked_user
 
 api = UserDto.api
 # api = Routing.route_user
@@ -13,14 +12,14 @@ _user = UserDto.model
 
 @api.route('')
 class UserList(Resource):
-    # @admin_token_required
-    # @api.marshal_list_with(_user)
+    @admin_token_required
+    @api.marshal_list_with(_user)
     def get(self):
         controllerUser = ControllerUser()
         return controllerUser.get()  # get_list_user()
 
     @api.expect(_user, validate=True)
-    # @api.marshal_with(_user)
+    @api.marshal_with(_user)
     def post(self):
         # data = request.json
         data = api.payload
@@ -30,20 +29,20 @@ class UserList(Resource):
 
 @api.route('/<int:user_id>')
 class User(Resource):
-    # @token_required
-    # @api.marshal_with(_user)
+    @token_required
+    @api.marshal_with(_user)
     def get(self, user_id):
         controller = ControllerUser()
         return controller.get_by_id(user_id=user_id)
 
-    # @token_required
+    @token_required
     @api.expect(_user, validate=True)
     def put(self, user_id):
         data = api.payload
         controller = ControllerUser()
         return controller.update(object_id=user_id, data=data)
 
-    # @token_required
+    @admin_token_required
     def delete(self, user_id):
         controller = ControllerUser()
         controller.delete(user_id=user_id)
@@ -51,7 +50,7 @@ class User(Resource):
 
 @api.route('/block')
 class BlockList(Resource):
-    # @admin_token_required
+    @admin_token_required
     def get(self):
         controllerUser = ControllerUser()
         return controllerUser.get_list_blocked_user()

@@ -5,6 +5,9 @@ from flask_cors import CORS
 # from app.dto import db
 
 from app.settings.config import config_by_name
+import app.settings.cf as cf
+cf.detector = None
+cf.set_detector = False
 
 db = SQLAlchemy()
 flask_bcrypt = Bcrypt()

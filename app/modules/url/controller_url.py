@@ -24,26 +24,59 @@ class ControllerUrl(Controller):
         db.session.commit()
         return url_captured
 
-    def get(self, filters=None, page=0):
-        page_size = 30
-        start = page*page_size
-        end = (page+1)*page_size
+
+
+    def get_query(self, mode, filters=None):
+        modes = mode.split(',')
+        # print('~~~~~~ modes', modes)
 
         cond = []
+        if 'benign' in modes and 'critical' not in modes and 'malware' not in modes:
+            cond.append(
+                "detected_by not like '%static%' and detected_by not like '%virustotal%' and detected_by not like '%HAN_sec%' and detected_by not like '%cuckoo%'")
+
+        for key in filters:
+            if key not in ['types', 'mode', 'p', 'page']:
+                print(key, filters[key])
+                cond.append("{} = '{}'".format(key, filters[key]))
 
         if len(cond) > 0:
             cond_str = 'where ' + (' and '.join(cond))
         else:
             cond_str = ''
-        cmd = "select url_capture_id, url, source_ip, protocol, date_requested, time_requested, is_malicious, score from capture_url " + \
-            cond_str+" order by date_requested desc, time_requested desc"
-        print('cmd', cmd)
+
+        cmd = "select url_capture_id, url, source_ip, protocol, date_requested, time_requested, is_malicious, score from capture_url " + cond_str+" order by date_requested desc, time_requested desc"
+        # print('cmd', cmd)
+
+        return cmd
+
+    def count_all(self, cmd):
+        engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
+        connection = engine.connect()
+        print('[count_all] cmd', cmd)
+        total = connection.execute(cmd).scalar()
+        if total is None: 
+            return 0
+
+        total = int(total)
+        print('~~total', total)
+        return total
+
+    def get(self, cmd, page=0):
+        page_size = 30
+        start = page*page_size
+        end = (page+1)*page_size
+
+        cmd = cmd + " limit "+str(start)+", "+str(end)
+        print('** [get] cmd', cmd)
 
         engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
         connection = engine.connect()
 
         urls_captured = connection.execute(cmd).fetchall()
+
         return urls_captured
+
 
     def get_by_id(self, object_id):
         url_captured = Url.query.filter_by(url_capture_id=object_id).first()

@@ -13,15 +13,26 @@ import json
 api = DtoUrl.api
 capture = DtoUrl.model
 
+@api.route('/count')
+class UrlCount(Resource):
+    def get(self):
+        data = request.args
+        mode = data['mode'] if 'mode' in data else ''
+        controller = ControllerUrl()
+        cmd = controller.get_query(mode=mode, filters=data)
+        return controller.count_all(cmd=cmd)
 
 @api.route('')
 class UrlList(Resource):
     @api.marshal_list_with(capture)
     def get(self):
         data = request.args
+        mode = data['mode'] if 'mode' in data else ''
+        page = int(data['p']) if ('p' in data and data['p'] != 'undefined') else 0
         controller = ControllerUrl()
-        print('[/url] GET', data)
-        return controller.get(filters=data)
+        print('[/url/] GET data', data, 'page', page)
+        cmd = controller.get_query(mode=mode, filters=data)
+        return controller.get(cmd=cmd, page=page)
 
     @api.expect(capture)
     @api.marshal_with(capture)

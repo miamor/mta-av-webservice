@@ -195,6 +195,10 @@ class Detector(object):
         labels, scores, msg = self.HAN_detect(task_ids)
         for i, task_id in enumerate(task_ids):
             # A little trick to decrease far
+            if labels[i] == 1:
+                if res_obj[2][task_id]['cuckoo']['score'] < 3:
+                    labels[i] = 0
+                    scores[i] = 0-scores[i]
             # if res_obj[2][task_id]['cuckoo']['is_malware'] == 1 and labels[i] == 0:
             #     labels[i] = 1
             #     scores[i] = 0-scores[i]

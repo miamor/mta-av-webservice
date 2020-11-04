@@ -64,7 +64,7 @@ class ControllerUser(Controller):
         else:
             cond_str = ''
 
-        cmd = "select * from capture_url " + cond_str+" order by date_requested desc, time_requested desc"
+        cmd = "select * from user " + cond_str+" order by user_id desc"
         # print('cmd', cmd)
 
         return cmd

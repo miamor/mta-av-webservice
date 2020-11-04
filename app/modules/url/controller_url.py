@@ -35,10 +35,11 @@ class ControllerUrl(Controller):
             cond.append(
                 "detected_by not like '%static%' and detected_by not like '%virustotal%' and detected_by not like '%HAN_sec%' and detected_by not like '%cuckoo%'")
 
-        for key in filters:
-            if key not in ['types', 'mode', 'p', 'page']:
-                print(key, filters[key])
-                cond.append("{} = '{}'".format(key, filters[key]))
+        if filters is not None:
+            for key in filters:
+                if key not in ['types', 'mode', 'p', 'page']:
+                    print(key, filters[key])
+                    cond.append("{} = '{}'".format(key, filters[key]))
 
         if len(cond) > 0:
             cond_str = 'where ' + (' and '.join(cond))

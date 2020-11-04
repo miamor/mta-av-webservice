@@ -9,12 +9,23 @@ import json
 api = DtoNoti.api
 noti = DtoNoti.model
 
+@api.route('/count')
+class NotiCount(Resource):
+    def get(self):
+        data = request.args
+        controller = ControllerNoti()
+        cmd = controller.get_query(filters=data)
+        return controller.count_all(cmd=cmd)
+
 @api.route('')
 class NotiList(Resource):
     @api.marshal_list_with(noti)
     def get(self):
+        data = request.args
+        page = int(data['p']) if ('p' in data and data['p'] != 'undefined') else 0
         controller = ControllerNoti()
-        return controller.get()
+        cmd = controller.get_query(filters=data)
+        return controller.get(cmd=cmd, page=page)
 
     @api.expect(noti)
     @api.marshal_with(noti)

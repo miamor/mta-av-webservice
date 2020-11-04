@@ -83,7 +83,7 @@ class Response(object):
 
 class Detector(object):
     def __init__(self):
-        self.han = HAN_module(cuckoo_analysis_dir=__CUCKOO_REPORT_DIR__)
+        self.han = HAN_module(cuckoo_analysis_dir=cf.__CUCKOO_REPORT_DIR__)
         # self.ngram = NGRAM_module(model_path=cf.NGRAM_MODEL_PATH)
         # self.img_bytes_module = CNN_Img_Module(img_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_img/models/rgb.h5', cnn_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/cnn_best__7500_1259.h5', lstm_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/lstm_best__7240_1259.h5')
         # self.asm_module = Asm_Module(cnn_model_path=cf.__ASM_API_ROOT__+'/output/cnn_best__9635_1778.h5', lstm_model_path=cf.__ASM_API_ROOT__+'/output/lstm_best__9427_1926.h5')

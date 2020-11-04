@@ -1,1 +1,1 @@
-from .view_url import api as ns_url
+from .view_noti import api as ns_noti

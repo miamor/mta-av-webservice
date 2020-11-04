@@ -1,5 +1,5 @@
 from flask_restplus import Api
-from app.modules import ns_user, ns_auth, ns_capture, ns_history, ns_url
+from app.modules import ns_user, ns_auth, ns_capture, ns_history, ns_url, ns_noti
 
 
 def init_api():
@@ -11,4 +11,5 @@ def init_api():
     api.add_namespace(ns_capture, path='/api/v1/capture')
     api.add_namespace(ns_history, path='/api/v1/history')
     api.add_namespace(ns_url, path='/api/v1/url')
+    api.add_namespace(ns_noti, path='/api/v1/noti')
     return api

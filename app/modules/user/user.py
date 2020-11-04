@@ -64,12 +64,15 @@ class User(Model):
     vkontakte = db.Column(db.String(80))
     avatar = db.Column(db.String(80))  # path to avatar image
 
-    isadmin = db.Column(db.Boolean, default=False)
+    # isadmin = db.Column(db.Boolean, default=False)
+    role = db.Column(db.Integer, default=0)
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    failed_login_time = db.Column(db.String(100))
 
     def __init__(self, email, password_hash, name=None, surname=None, middlename=None, fullname=None, age=None,
                  birthday=None, home_address=None, home_country=None, home_city=None, home_street=None,
                  home_geo_long=None, home_geo_lat=None, phone=None, username=None, blocked=None,
-                 token=None, facebook=None, instagram=None, vkontakte=None, avatar=None, isadmin=None):
+                 token=None, facebook=None, instagram=None, vkontakte=None, avatar=None, role=None, failed_login_attempts=None, failed_login_time=None):
         self.name = name
         self.surname = surname
         self.middlename = middlename
@@ -95,7 +98,10 @@ class User(Model):
         self.instagram = instagram
         self.vkontakte = vkontakte
         self.avatar = avatar
-        self.isadmin = isadmin
+        # self.isadmin = isadmin
+        self.role = role
+        self.failed_login_attempts = failed_login_attempts
+        self.failed_login_time = failed_login_time
 
     @property
     def password(self):

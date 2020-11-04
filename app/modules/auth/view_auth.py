@@ -3,11 +3,13 @@ from flask_restplus import Resource
 
 from app.modules.auth.dto_auth import DtoAuth
 from .controller_auth import ControllerAuth
+from app.modules.user.dto_user import UserDto
 # from app.modules.common.decorator import token_required
 
 api = DtoAuth.api
 # api = Routing.route_auth
 model = DtoAuth.model
+_user = UserDto.model
 
 
 @api.route('/login')
@@ -15,7 +17,9 @@ class UserLogin(Resource):
     @api.expect(model, validate=True)
     def post(self):
         post_data = api.payload # request.json
-        return ControllerAuth.login_user(data=post_data)
+        source_ip = request.remote_addr
+        print('[/auth/login] post_data', post_data, 'source_ip', source_ip)
+        return ControllerAuth.login_user(data=post_data, ip=source_ip)
 
 
 @api.route('/logout')

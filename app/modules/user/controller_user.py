@@ -13,6 +13,14 @@ class ControllerUser(Controller):
     Controller to mamage all interaction to user table in database.
     """
 
+    def login(self, data):
+        email = data['email']
+        password_hash = data['password']
+        user = User.query.filter_by(email=email, password_hash=password_hash).first()
+        if user is None:
+            return None
+        return result(data=marshal(user, UserDto.model))  # user
+
     def create(self, data):
         """
         Tao nguoi dung moi
@@ -29,8 +37,7 @@ class ControllerUser(Controller):
                 user = self._parse_user(data=data, user=None)
                 db.session.add(user)
                 db.session.commit()
-                return result(message='Create user successfully', data=marshal(user,
-                                                                               UserDto.model))  # True, user  # send_result(message='Create user successfully', data=marshal(user, UserDto.model))
+                return result(message='Create user successfully', data=marshal(user, UserDto.model))  # True, user  # send_result(message='Create user successfully', data=marshal(user, UserDto.model))
             else:
                 return error(message='User exists')  # False, None  # send_error(message='User already exists')
         except Exception as e:
@@ -44,8 +51,8 @@ class ControllerUser(Controller):
         """
         try:
             users = User.query.all()
-            return result(data=marshal(users, UserDto.model))
-            # return users
+            # return result(data=marshal(users, UserDto.model))
+            return users
         except Exception as e:
             print(e.__str__())
             return error(message='Could not load users.')  # None  # send_error(message=e)
@@ -62,8 +69,7 @@ class ControllerUser(Controller):
             else:
                 user = self._parse_user(data=data, user=user)
                 db.session.commit()
-                return result(message='Update successfully', data=marshal(user,
-                                                                          UserDto.model))  # True  # send_result(message='Update user successfully', data=marshal(user, UserDto.model))
+                return result(message='Update successfully', data=marshal(user, UserDto.model))  # True  # send_result(message='Update user successfully', data=marshal(user, UserDto.model))
         except Exception as e:
             print(e.__str__())
             return error(message='Could not update user')  # False  # send_error(message=e)
@@ -192,15 +198,22 @@ class ControllerUser(Controller):
             vkontakte = data['vkontakte']
         if 'avatar' in data:
             avatar = data['avatar']
-        if 'isadmin' in data:
-            isadmin = bool(data['isadmin'])
+        # if 'isadmin' in data:
+        #     isadmin = bool(data['isadmin'])
+        if 'role' in data:
+            role = int(data['role'])
+        if 'failed_login_attempts' in data:
+            failed_login_attempts = int(data['failed_login_attempts'])
+        if 'failed_login_time' in data:
+            failed_login_time = data['failed_login_time']
+
         if user is None:
             user = User(name=name, surname=surname, middlename=middlename, fullname=fullname, age=age,
                         birthday=birthday, home_address=home_address, home_country=home_country, home_city=home_city,
                         home_street=home_street, home_geo_long=home_geo_long, home_geo_lat=home_geo_lat, phone=phone,
                         email=email, username=username,
                         password_hash=passwordHash, blocked=blocked, token=token,
-                        facebook=facebook, instagram=instagram, vkontakte=vkontakte, avatar=avatar, isadmin=isadmin)
+                        facebook=facebook, instagram=instagram, vkontakte=vkontakte, avatar=avatar, role=role, failed_login_attempts=failed_login_attempts, failed_login_time=failed_login_time)
         else:
             user.name = name
             user.surname = surname
@@ -227,7 +240,10 @@ class ControllerUser(Controller):
             user.instagram = instagram
             user.vkontakte = vkontakte
             user.avatar = avatar
-            user.isadmin = isadmin
+            # user.isadmin = isadmin
+            user.role = role
+            user.failed_login_attempts = failed_login_attempts
+            user.failed_login_time = failed_login_time
         return user
 
 # def create_user(data):

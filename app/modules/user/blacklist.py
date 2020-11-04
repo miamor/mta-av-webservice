@@ -9,15 +9,15 @@ class BlacklistToken(Model):
     """
     Token model for storing JWT tokens
     """
-    __tablename__ = 'BLACKLIST_TOKENS'
+    __tablename__ = 'blacklist_token'
 
-    tokenID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    blacklist_token_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     token = db.Column(db.String(500), unique=True, nullable=False)
-    blacklisted_on = db.Column(db.DateTime, nullable=False)
+    date_created = db.Column(db.DateTime, nullable=False)
 
     def __init__(self, token):
         self.token = token
-        self.blacklisted_on = datetime.datetime.now()
+        self.date_created = datetime.datetime.now()
 
     @staticmethod
     def check_blacklist(auth_token):

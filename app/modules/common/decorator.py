@@ -24,7 +24,7 @@ def token_required(f):
 def admin_token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-
+        print('[admin_token_required] request', request)
         data, status = ControllerAuth.get_logged_user(request)
         token = data.get('data')
 

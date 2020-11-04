@@ -1,12 +1,12 @@
 from flask_restplus import Namespace, fields
-from ..common.dto import Dto
+from app.modules.common.dto import Dto
 
 
 class UserDto(Dto):
     name = 'user'
     api = Namespace(name)
     model = api.model(name, {
-        # 'user_id': fields.Integer(required=False),
+        'user_id': fields.Integer(required=False),
         'name': fields.String(required=False),
         'surname': fields.String(required=False),
         'middlename': fields.String(required=False),
@@ -32,5 +32,8 @@ class UserDto(Dto):
         'instagram': fields.String(required=False),
         'vkontakte': fields.String(required=False),
         'avatar': fields.String(required=False),
-        'isadmin': fields.Boolean(required=False)
+        # 'isadmin': fields.Boolean(required=False),
+        'role': fields.Integer(required=False),
+        'failed_login_attempts': fields.Integer(required=False),
+        'failed_login_time': fields.String(required=False)
     })

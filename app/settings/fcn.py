@@ -103,12 +103,7 @@ def check():
             # to get report
             # and cukoo/virustotal result
             # task_ids, resp, scan_time = cf.detector.run(filepaths, task_ids)
-            # Run in pool
-            # resp = cf.__pool_run_cuckoo__.map(cf.detector.run, task_ids)
-            resp = []
-            for task_id in task_ids:
-                resp.append(cf.detector.run(task_id))
-            print('[fcn_check] ** __pool_run_cuckoo__ return ', resp)
+            resp, scan_time = cf.detector.run(filepaths, task_ids)
 
             # start a thread for other detectors
             # t1 = threading.Thread(target=detector.run_han, args=(task_ids))

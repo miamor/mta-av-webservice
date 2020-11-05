@@ -1,18 +1,33 @@
 from flask_restplus import Api
 from app.modules import ns_user, ns_auth, ns_capture, ns_history, ns_url, ns_noti
-
 import app.settings.cf as cf
-# from multiprocessing import Process, Queue
+# import app.settings.fcn as fcn
+# from app.modules.malware.controller_capture import ControllerCapture
+
+from multiprocessing import Process, Queue, Pool
 import threading, queue
-from app.modules.malware.controller_capture import ControllerCapture
 
-cf.controllerCapture = ControllerCapture()
-cf.detector = None
-cf.set_detector = False
-# cf.is_running_detection = False
-cf.waiting_tasks = queue.Queue()
 
-cf.controllerCapture.check()
+
+# cf.controllerCapture = ControllerCapture()
+
+cf.__tasks_to_process__ = queue.Queue()
+cf.__tasks_done__ = queue.Queue()
+
+
+# cf.__tasks_process__ = threading.Thread(target=fcn.fcn_check, args=(cf.detector,))
+# cf.__tasks_process__.start()
+
+
+# def process_task():
+#     threading.Thread(target=cf.controllerCapture.check, daemon=True).start()
+
+cf.__tasks_process__ = Process(target=fcn.fcn_check)
+cf.__tasks_process__.start()
+
+# cf.__tasks_process__ = Pool()
+
+
 
 def init_api():
     api = Api(title='mtaSMaD APIs',
@@ -25,3 +40,6 @@ def init_api():
     api.add_namespace(ns_url, path='/api/v1/url')
     api.add_namespace(ns_noti, path='/api/v1/noti')
     return api
+
+
+cf.__tasks_process__.join()

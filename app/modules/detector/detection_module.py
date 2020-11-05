@@ -2,7 +2,7 @@ import os
 from werkzeug.utils import secure_filename
 import time
 from flask import jsonify
-from ..detector.sandbox import Sandbox_API
+# from ..detector.sandbox import Sandbox_API
 
 import app.settings.cf as cf
 import sys
@@ -85,12 +85,12 @@ class Detector(object):
     def __init__(self):
         print('\n\n[Detector] **** CALL INIT Detector() ****\n')
         self.han = HAN_module(cuckoo_analysis_dir=cf.__CUCKOO_REPORT_DIR__)
-        print('[Detector] self.han = HAN_module')
+        # print('[Detector] self.han = HAN_module')
         # self.ngram = NGRAM_module(model_path=cf.NGRAM_MODEL_PATH)
         # self.img_bytes_module = CNN_Img_Module(img_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_img/models/rgb.h5', cnn_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/cnn_best__7500_1259.h5', lstm_bytes_model_path=cf.__IMG_BYTES_API_ROOT__+'/code_bytes/output/lstm_best__7240_1259.h5')
         # self.asm_module = Asm_Module(cnn_model_path=cf.__ASM_API_ROOT__+'/output/cnn_best__9635_1778.h5', lstm_model_path=cf.__ASM_API_ROOT__+'/output/lstm_best__9427_1926.h5')
 
-        self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
+        # cf.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
 
         return
 
@@ -117,7 +117,7 @@ class Detector(object):
         while len(done_report) < len(task_ids):
             for task_id in task_ids:
                 if task_id not in done_report:
-                    task_status, errors, hash_value = self.sandbox.get_task_status(task_id)
+                    task_status, errors, hash_value = cf.sandbox.get_task_status(task_id)
                     # print('errors', errors)
                     print('#', task_id, 'task_status', task_status, 'errors', errors)
                     if task_status == 'reported':
@@ -130,7 +130,7 @@ class Detector(object):
         for task_id in task_ids:
             filename = filepaths[k].split('/')[-1]
             # filename = filenames[k]
-            report = self.sandbox.get_report(task_id)
+            report = cf.sandbox.get_report(task_id)
             # hash_value = report['sample'][cf.hash_type]
             hash_value = hash_values[task_id]
 
@@ -187,7 +187,7 @@ class Detector(object):
         #   engine__name        (string):   name of the engine
         ####################################################
         self.__res__ = Response(res_obj)
-        print('* [run_han]', res_obj)
+        # print('* [run_han]', res_obj)
 
         self.begin_time = time.time()
         
@@ -196,11 +196,17 @@ class Detector(object):
         for i, task_id in enumerate(task_ids):
             # A little trick to decrease far
             if labels[i] == 1:
-                if res_obj[2][task_id]['cuckoo']['score'] <= 3.5:
+                if res_obj[2][task_id]['cuckoo']['score'] <= 3.0:
                     labels[i] = 0
                     # scores[i] = 0-scores[i]
                 if res_obj[2][task_id]['virustotal']['score'] == 0:
                     labels[i] = 0
+            elif labels[i] == 0:
+                if res_obj[2][task_id]['cuckoo']['score'] >= 4.5:
+                    labels[i] = 1
+                    # scores[i] = 0-scores[i]
+                if res_obj[2][task_id]['virustotal']['is_malware']:
+                    labels[i] = 1
             # if res_obj[2][task_id]['cuckoo']['is_malware'] == 1 and labels[i] == 0:
             #     labels[i] = 1
             #     scores[i] = 0-scores[i]
@@ -325,7 +331,7 @@ class Detector(object):
         return
     
     def run_sandbox(self, filepath):
-        return self.sandbox.start_analysis(filepath)
+        return cf.sandbox.start_analysis(filepath)
     
     def run_sandbox_and_wait(self, filepaths):
         done_report = []
@@ -335,7 +341,7 @@ class Detector(object):
 
         # Run analysis
         for filepath in filepaths:
-            task_id = self.sandbox.start_analysis(filepath)
+            task_id = cf.sandbox.start_analysis(filepath)
             # print("task_id", task_id)
 
             if task_id is None:
@@ -348,7 +354,7 @@ class Detector(object):
         while len(done_report) < total_tasks:
             for task_id in task_ids:
                 if task_id not in done_report:
-                    task_status, errors, hash_value = self.sandbox.get_task_status(task_id)
+                    task_status, errors, hash_value = cf.sandbox.get_task_status(task_id)
                     # print('errors', errors)
                     print('#', task_id, 'task_status', task_status, 'errors', errors)
                     if task_status == 'reported':
@@ -362,7 +368,7 @@ class Detector(object):
 
 
         # Analyzing done. Now get report and feed to different malware detectors
-        reports = {task_id: self.sandbox.get_report(task_id) for task_id in task_ids}
+        reports = {task_id: cf.sandbox.get_report(task_id) for task_id in task_ids}
 
         return task_ids, hash_values, reports
 
@@ -398,7 +404,7 @@ class Detector(object):
                 virustotal_res['msg'] = 'No virustotal scans found'
 
         cuckoo_res = {
-            'is_malware': int(task_info['score'] >= 4),
+            'is_malware': int(task_info['score'] >= 5.0),
             'score': task_info['score'],
             'msg': ''
         }
@@ -432,11 +438,11 @@ class Detector(object):
 
     
     def run_(self, filenames, filepaths):
-        self.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
+        cf.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
         
         # Run analysis
         for filepath in filepaths:
-            task_id = self.sandbox.start_analysis(filepath)
+            task_id = cf.sandbox.start_analysis(filepath)
             # print("task_id", task_id)
 
             if task_id is None:

@@ -36,7 +36,7 @@ class Sandbox_API(object):
         r = requests.get(REST_URL, headers=HEADERS)
 
         task = r.json()
-        print('task', task)
+        # print('task', task)
         if 'task' not in task:
             return 'error', 'Error', task
 

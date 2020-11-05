@@ -75,7 +75,7 @@ def check():
     # Load a batch of 10 files unprocessed in database
 
     while not cf.is_processing:
-        cf.__pool_run_cuckoo__ = Pool()
+        cf.__pool_run_cuckoo__ = Pool(4)
 
         # load unprocessed from database
         cmd = "select * from capture where detected_by is null order by capture_id asc limit 0,{}".format(

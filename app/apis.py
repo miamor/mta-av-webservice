@@ -41,4 +41,4 @@ def init_api():
     return api
 
 
-cf.__tasks_process__.join()
+# cf.__tasks_process__.join()

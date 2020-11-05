@@ -74,15 +74,15 @@ def check():
     # Process by batch.
     # Load a batch of 10 files unprocessed in database
 
-    while not cf.is_processing:
-        cf.__pool_run_cuckoo__ = Pool(4)
+    # while not cf.is_processing:
+    if True:
+        # cf.__pool_run_cuckoo__ = Pool(1)
 
         # load unprocessed from database
         cmd = "select * from capture where detected_by is null order by capture_id asc limit 0,{}".format(
             cf.process_batch_size)
-        engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
-        connection = engine.connect()
-        captures_unprocessed = connection.execute(cmd).fetchall()
+
+        captures_unprocessed = cf.connection.execute(cmd).fetchall()
 
         # found unprocessed task
         if captures_unprocessed is not None and len(captures_unprocessed) > 0:
@@ -104,7 +104,10 @@ def check():
             # and cukoo/virustotal result
             # task_ids, resp, scan_time = cf.detector.run(filepaths, task_ids)
             # Run in pool
-            resp = cf.__pool_run_cuckoo__.map(cf.detector.run, task_ids)
+            # resp = cf.__pool_run_cuckoo__.map(cf.detector.run, task_ids)
+            resp = []
+            for task_id in task_ids:
+                resp.append(cf.detector.run(task_id))
             print('[fcn_check] ** __pool_run_cuckoo__ return ', resp)
 
             # start a thread for other detectors
@@ -123,7 +126,7 @@ def check():
 
             report_ids = []
             links = []
-            controllerCapture = ControllerCapture()
+            # controllerCapture = ControllerCapture()
             for i in range(len(captures_unprocessed)):
                 tmp = {}
                 task_id = task_ids[i]
@@ -168,28 +171,31 @@ def check():
                 report_ids.append(res['report_id'])
 
                 # update database
-                controllerCapture._parse_malware(data=tmp, malware=captures_unprocessed[i])
-                db.session.commit()
+                # controllerCapture._parse_malware(data=tmp, malware=captures_unprocessed[i])
+                # db.session.commit()
 
-                links.append(str(captures_unprocessed[i].capture_id))
+                # links.append(str(captures_unprocessed[i].capture_id))
 
 
-            cf.__pool_run_cuckoo__.close()
-            cf.__pool_run_cuckoo__.join()
-            cf.is_processing = False
+            # cf.__pool_run_cuckoo__.close()
+            # cf.__pool_run_cuckoo__.join()
+            # cf.is_processing = False
 
-            # print('resp_all[0]', resp_all[0])
-            # cf.is_running_detection = False
+            # # print('resp_all[0]', resp_all[0])
+            # # cf.is_running_detection = False
 
-            # cf.__tasks_to_process__.task_done()
+            # # cf.__tasks_to_process__.task_done()
 
-            # add notification
-            noti_data = {
-                'user_id': 2,
-                'message': 'Xử lý thành công các tác vụ {}. Xem chi tiết tại: <<{}>>'.format(', '.join(task_ids), '|'.join(links))
-            }
-            controllerNoti = ControllerNoti()
-            controllerNoti.create(data=noti_data)
+            # # add notification
+            # noti_data = {
+            #     'user_id': 2,
+            #     'message': 'Xử lý thành công các tác vụ {}. Xem chi tiết tại: <<{}>>'.format(', '.join(task_ids), '|'.join(links))
+            # }
+            # controllerNoti = ControllerNoti()
+            # controllerNoti.create(data=noti_data)
+
+
+            time.sleep(1.0)
 
             # return result(message='Check completed', data=resp_all[0])
             # return task_data

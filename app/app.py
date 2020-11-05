@@ -4,7 +4,7 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 # from app.dto import db
 
-from app.settings.config import config_by_name
+from app.settings.config import config_by_name, Config
 
 import app.settings.cf as cf
 # import threading, queue
@@ -25,6 +25,10 @@ cf.controllerCapture = None
 
 db = SQLAlchemy()
 flask_bcrypt = Bcrypt()
+
+
+cf.engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
+cf.connection = cf.engine.connect()
 
 
 def init_app(config_name):

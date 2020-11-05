@@ -23,10 +23,11 @@ import threading, queue
 # def process_task():
 #     threading.Thread(target=cf.controllerCapture.check, daemon=True).start()
 
-cf.__tasks_process__ = Process(target=fcn.check)
-cf.__tasks_process__.start()
+# cf.__tasks_process__ = Process(target=fcn.check)
+# cf.__tasks_process__.start()
 
-
+t = threading.Thread(target=fcn.check, args=(,))
+t.start()
 
 def init_api():
     api = Api(title='mtaSMaD APIs',

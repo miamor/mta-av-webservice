@@ -26,7 +26,7 @@ import threading, queue
 # cf.__tasks_process__ = Process(target=fcn.check)
 # cf.__tasks_process__.start()
 
-t = threading.Thread(target=fcn.check, args=(,))
+t = threading.Thread(target=fcn.check)
 t.start()
 
 def init_api():

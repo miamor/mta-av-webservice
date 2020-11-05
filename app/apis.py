@@ -1,7 +1,7 @@
 from flask_restplus import Api
 from app.modules import ns_user, ns_auth, ns_capture, ns_history, ns_url, ns_noti
 import app.settings.cf as cf
-# import app.settings.fcn as fcn
+import app.settings.fcn as fcn
 # from app.modules.malware.controller_capture import ControllerCapture
 
 from multiprocessing import Process, Queue, Pool
@@ -11,12 +11,13 @@ import threading, queue
 
 # cf.controllerCapture = ControllerCapture()
 
-cf.__tasks_to_process__ = queue.Queue()
-cf.__tasks_done__ = queue.Queue()
+# cf.__tasks_to_process__ = queue.Queue()
+# cf.__tasks_done__ = queue.Queue()
 
 
 # cf.__tasks_process__ = threading.Thread(target=fcn.fcn_check, args=(cf.detector,))
 # cf.__tasks_process__.start()
+# cf.__submit_cuckoo_thread__ = insert_db_unprocessed
 
 
 # def process_task():

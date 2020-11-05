@@ -12,6 +12,8 @@ from app.app import db
 from app.settings.config import Config
 
 from werkzeug.utils import secure_filename
+from app.utils.response import error, result
+from multiprocessing import Pool
 
 from app.modules.detector.detection_module import Detector
 if not cf.set_detector:
@@ -22,19 +24,6 @@ from app.modules.detector.sandbox import Sandbox_API
 cf.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY,
                          hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
 
-
-def insert_db_unprocessed(self):
-    print('\n*** CALL insert_db_unprocessed ')
-    while not cf.__tasks_to_process__.empty():
-        filepaths, task_ids, task_data = cf.__tasks_to_process__.get()
-
-        filenames = []
-        for i in range(len(task_data)):
-            task_data[i]['task_id'] = task_ids[i]
-            controller = ControllerCapture()
-            malware = controller.create(data=task_data[i])
-            print('**** malware inserted', i, malware)
-    return result(message='Insert completed')
 
 
 def submit_cuckoo(filepaths):

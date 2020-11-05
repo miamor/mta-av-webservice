@@ -79,7 +79,7 @@ def check():
         # cf.__pool_run_cuckoo__ = Pool(1)
 
         # load unprocessed from database
-        cmd = "select * from capture where detected_by is null order by capture_id asc limit 0,{}".format(
+        cmd = "select * from capture where detected_by is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(
             cf.process_batch_size)
 
         captures_unprocessed = cf.connection.execute(cmd).fetchall()

@@ -91,6 +91,7 @@ def check():
             filepaths = []
             task_ids = []
             for capture_unprocessed in captures_unprocessed:
+                print('[check] #', 'capture_unprocessed', capture_unprocessed)
                 # filepaths, task_ids, task_data = data
                 filepaths.append(capture_unprocessed.file_path)
                 task_ids.append(capture_unprocessed.task_id)

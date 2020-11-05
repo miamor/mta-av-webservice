@@ -1,7 +1,3 @@
-from api_asm import Asm_Module
-from api_img_bytes import CNN_Img_Module
-from ngram_api import NGRAM_module
-from han_sec_api import HAN_module
 import os
 from werkzeug.utils import secure_filename
 import time
@@ -13,10 +9,14 @@ import sys
 # sys.path.insert(0, '')
 sys.path.insert(1, cf.__HAN_ROOT__)
 # import han_sec_api as han
+from han_sec_api import HAN_module
 sys.path.insert(2, cf.__NGRAM_ROOT__)
 # import ngram_api as ngram
+from ngram_api import NGRAM_module
 sys.path.insert(3, cf.__IMG_BYTES_API_ROOT__)
+from api_img_bytes import CNN_Img_Module
 sys.path.insert(4, cf.__ASM_API_ROOT__)
+from api_asm import Asm_Module
 
 
 class Response(object):

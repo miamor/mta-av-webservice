@@ -1,7 +1,3 @@
-from api_asm import Asm_Module
-from api_img_bytes import CNN_Img_Module
-from ngram_api import NGRAM_module
-from han_sec_api import HAN_module
 import os
 from werkzeug.utils import secure_filename
 import time
@@ -13,11 +9,14 @@ import sys
 # sys.path.insert(0, '')
 sys.path.insert(1, cf.__HAN_ROOT__)
 # import han_sec_api as han
+from han_sec_api import HAN_module
 sys.path.insert(2, cf.__NGRAM_ROOT__)
 # import ngram_api as ngram
+from ngram_api import NGRAM_module
 sys.path.insert(3, cf.__IMG_BYTES_API_ROOT__)
+from api_img_bytes import CNN_Img_Module
 sys.path.insert(4, cf.__ASM_API_ROOT__)
-
+from api_asm import Asm_Module
 
 class Response(object):
     def __init__(self, res_obj=None):
@@ -29,23 +28,22 @@ class Response(object):
             self.res = {}
             self.engines_detected = {}
             self.detector_output = {}
-
+    
     def add_obj(self, task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep):
         ''' Add detection result to response '''
         if task_id not in self.res:
-            print('add_obj: ~~~~ ', task_id, filename, hash_value,
-                  report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
+            print('add_obj: ~~~~ ', task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
 
             self.res[task_id] = {
-                'filename': filename,
-                'hash_type': cf.hash_type,
-                'hash_value': hash_value,
-
+                'filename' : filename,
+                'hash_type' : cf.hash_type,
+                'hash_value' : hash_value,
+                
                 'report_path': report_path,
                 'report_id': task_id,
                 'file_type': ftype,
                 'file_size': fsize,
-
+                
                 'md5': md5,
                 'sha1': sha1,
                 'sha256': sha256,
@@ -58,7 +56,7 @@ class Response(object):
             self.engines_detected[task_id] = []
         if task_id not in self.detector_output:
             self.detector_output[task_id] = {}
-
+    
     def add_response(self, task_id, is_malware, score, engine, scan_time, msg=''):
         ''' Add detection result to response '''
         if is_malware == 1:
@@ -70,10 +68,10 @@ class Response(object):
         #     'msg' : msg
         # }
         self.detector_output[task_id][engine] = {
-            'is_malware': is_malware,
-            'score': score,
+            'is_malware' : is_malware,
+            'score' : score,
             'scan_time': scan_time,
-            'msg': msg
+            'msg' : msg
         }
 
         if is_malware == 1 and engine not in self.engines_detected[task_id]:
@@ -96,10 +94,12 @@ class Detector(object):
 
         return
 
-    def run(self, task_id):
-        # filepath, task_id = data
 
+    def run(self, filepaths, task_ids):
         self.__res__ = Response()
+
+        done_report = []
+        hash_values = {}
 
         self.begin_time = time.time()
 
@@ -107,60 +107,73 @@ class Detector(object):
         # 1. static detect
         ####################################################
 
+
+
         ####################################################
         # 2. get report from task_id
         ####################################################
-        report_done = False
-        while not report_done:
-            task_status, errors, hash_value = cf.sandbox.get_task_status(
-                task_id)
-            # print('errors', errors)
-            print('#', task_id, 'task_status', task_status, 'errors', errors)
-            if task_status == 'reported':
-                report_done = True
+        # task_ids, hash_values, reports = self.run_sandbox_and_wait(filepaths)
+
+        while len(done_report) < len(task_ids):
+            for task_id in task_ids:
+                if task_id not in done_report:
+                    task_status, errors, hash_value = cf.sandbox.get_task_status(task_id)
+                    # print('errors', errors)
+                    print('#', task_id, 'task_status', task_status, 'errors', errors)
+                    if task_status == 'reported':
+                        hash_values[task_id] = hash_value
+                        done_report.append(task_id)
             time.sleep(10)
 
-        report = cf.sandbox.get_report(task_id)
 
-        report_path = report['target']['file']['path']
-        ftype = report['target']['file']['type']
-        md5 = report['target']['file']['md5']
-        sha1 = report['target']['file']['sha1']
-        sha256 = report['target']['file']['sha256']
-        sha512 = report['target']['file']['sha512']
-        ssdeep = report['target']['file']['ssdeep']
-        fsize = report['target']['file']['size']
+        k = 0
+        for task_id in task_ids:
+            filename = filepaths[k].split('/')[-1]
+            # filename = filenames[k]
+            report = cf.sandbox.get_report(task_id)
+            # hash_value = report['sample'][cf.hash_type]
+            hash_value = hash_values[task_id]
+
+            # hash_value = hash_values[task_id]
+            k += 1
+
+            # print("***** report[task_id]", task_id, report)
+            # print("***** report['target']['file']~~~~~~~~", report['target']['file'])
+            report_path = report['target']['file']['path']
+            ftype = report['target']['file']['type']
+            md5 = report['target']['file']['md5']
+            sha1 = report['target']['file']['sha1']
+            sha256 = report['target']['file']['sha256']
+            sha512 = report['target']['file']['sha512']
+            ssdeep = report['target']['file']['ssdeep']
+            fsize = report['target']['file']['size']
+
+            self.__res__.add_obj(task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
 
 
-        # filename = filepath.split('/')[-1]
-        filename = ''
-        self.__res__.add_obj(task_id, filename, hash_value, report_path,
-                             ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
+            ####################################################
+            # 3. feed different dynamic detectors (cuckoo & virus total)
+            # -----------------
+            # Each engine can return whatever format you want
+            # For each engine, use this format to add its result to final response
+            # __res__.add_response(task_id, engine__is_malware, engine__score, engine__name, engine__scan_time, engine__msg)
+            #   engine__is_malware  (int):      1:malware|0:benign
+            #   engine__score       (float):    confidence/score/...
+            #   engine__name        (string):   name of the engine
+            ####################################################
 
-
-        ####################################################
-        # 3. feed different dynamic detectors (cuckoo & virus total)
-        # -----------------
-        # Each engine can return whatever format you want
-        # For each engine, use this format to add its result to final response
-        # __res__.add_response(task_id, engine__is_malware, engine__score, engine__name, engine__scan_time, engine__msg)
-        #   engine__is_malware  (int):      1:malware|0:benign
-        #   engine__score       (float):    confidence/score/...
-        #   engine__name        (string):   name of the engine
-        ####################################################
-
-        # cuckoo virustotal detector
-        obj_res = self.cuckoo_virustotal_detect(report)
-        for engine_name in obj_res:
-            engine_res = obj_res[engine_name]
-            # for each engine, use this format to add its result to final response
-            self.__res__.add_response(task_id, engine_res['is_malware'], engine_res['score'], engine_name, time.time(
-            )-self.begin_time, engine_res['msg'])
+            # cuckoo virustotal detector
+            obj_res = self.cuckoo_virustotal_detect(report)
+            for engine_name in obj_res:
+                engine_res = obj_res[engine_name]
+                # for each engine, use this format to add its result to final response
+                self.__res__.add_response(task_id, engine_res['is_malware'], engine_res['score'], engine_name, time.time()-self.begin_time, engine_res['msg'])
 
         scan_time = time.time()-self.begin_time
         print('time', scan_time)
 
-        return self.__res__.get()
+        return task_ids, self.__res__.get(), scan_time
+
 
     def run_han(self, task_ids, res_obj):
         ####################################################
@@ -177,7 +190,7 @@ class Detector(object):
         # print('* [run_han]', res_obj)
 
         self.begin_time = time.time()
-
+        
         # task_ids = [task_id]
         labels, scores, msg = self.HAN_detect(task_ids)
         for i, task_id in enumerate(task_ids):
@@ -209,14 +222,14 @@ class Detector(object):
             #     labels[i] = 1
             #     scores[i] = 0 - scores[i]
 
-            self.__res__.add_response(
-                task_id, labels[i], scores[i], 'HAN_sec', time.time()-self.begin_time)
+            self.__res__.add_response(task_id, labels[i], scores[i], 'HAN_sec', time.time()-self.begin_time)
         # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
 
         scan_time = time.time()-self.begin_time
         print('[run_han] HAN time', scan_time)
 
         return self.__res__.get(), scan_time
+
 
     def run_ngram(self, file_paths, task_ids, res_obj):
         ####################################################
@@ -234,19 +247,18 @@ class Detector(object):
 
         self.begin_time = time.time()
 
-        # n-gram detector
-        df = self.ngram.creator(
-            file_paths, cf.N_GRAM_SIZE, len(file_paths), cf.FREQ_FILE)
+        #### n-gram detector 
+        df = self.ngram.creator(file_paths, cf.N_GRAM_SIZE, len(file_paths), cf.FREQ_FILE)
         labels = [int(val) for val in self.ngram.infer(df)]
 
         for i, task_id in enumerate(task_ids):
-            self.__res__.add_response(
-                task_id, labels[i], 0, 'ngram', time.time()-self.begin_time)
+            self.__res__.add_response(task_id, labels[i], 0, 'ngram', time.time()-self.begin_time)
 
         scan_time = time.time()-self.begin_time
         print('[run_ngram] NGRAM time', scan_time)
 
         return self.__res__.get(), scan_time
+
 
     def run_img_bytes(self, file_paths, task_ids, res_obj):
         ####################################################
@@ -264,9 +276,8 @@ class Detector(object):
 
         self.begin_time = time.time()
 
-        # cnn img, cnn bytes, lstm bytes detector
-        module_res = self.img_bytes_module.from_files(
-            file_paths, task_ids=task_ids, output_directory=cf.__IMG_BYTES_API_ROOT__+'/api_tasks/__prepared_RGB')
+        #### cnn img, cnn bytes, lstm bytes detector 
+        module_res = self.img_bytes_module.from_files(file_paths, task_ids=task_ids, output_directory=cf.__IMG_BYTES_API_ROOT__+'/api_tasks/__prepared_RGB')
 
         for engine in module_res:
             labels, scores = module_res[engine]
@@ -274,13 +285,14 @@ class Detector(object):
             scores = scores.tolist()
 
             for i, task_id in enumerate(task_ids):
-                self.__res__.add_response(
-                    task_id, labels[i], scores[i], engine, time.time()-self.begin_time)
+                self.__res__.add_response(task_id, labels[i], scores[i], engine, time.time()-self.begin_time)
 
         scan_time = time.time()-self.begin_time
         print('[run_img_bytes] CNN_img_bytes time', scan_time)
 
         return self.__res__.get(), scan_time
+
+
 
     def run_asm(self, file_paths, task_ids, res_obj):
         ####################################################
@@ -298,7 +310,7 @@ class Detector(object):
 
         self.begin_time = time.time()
 
-        # cnn, lstm asm detector
+        #### cnn, lstm asm detector 
         module_res = self.asm_module.from_files(file_paths, task_ids=task_ids)
 
         for engine in module_res:
@@ -307,20 +319,20 @@ class Detector(object):
             scores = scores.tolist()
 
             for i, task_id in enumerate(task_ids):
-                self.__res__.add_response(
-                    task_id, labels[i], scores[i], engine, time.time()-self.begin_time)
+                self.__res__.add_response(task_id, labels[i], scores[i], engine, time.time()-self.begin_time)
 
         scan_time = time.time()-self.begin_time
         print('[run_asm] CNN_asm, LSTM_asm time', scan_time)
 
         return self.__res__.get(), scan_time
 
+
     def static_detector(self, filepath):
         return
-
+    
     def run_sandbox(self, filepath):
         return cf.sandbox.start_analysis(filepath)
-
+    
     def run_sandbox_and_wait(self, filepaths):
         done_report = []
         total_tasks = len(filepaths)
@@ -334,7 +346,7 @@ class Detector(object):
 
             if task_id is None:
                 return jsonify({"status": "error", "status_msg": "Create task for file {} failed.".format(filepath)})
-
+            
             task_ids.append(task_id)
 
         # Now wait until task is complete
@@ -342,11 +354,9 @@ class Detector(object):
         while len(done_report) < total_tasks:
             for task_id in task_ids:
                 if task_id not in done_report:
-                    task_status, errors, hash_value = cf.sandbox.get_task_status(
-                        task_id)
+                    task_status, errors, hash_value = cf.sandbox.get_task_status(task_id)
                     # print('errors', errors)
-                    print('#', task_id, 'task_status',
-                          task_status, 'errors', errors)
+                    print('#', task_id, 'task_status', task_status, 'errors', errors)
                     if task_status == 'reported':
                         hash_values[task_id] = hash_value
                         done_report.append(task_id)
@@ -356,11 +366,12 @@ class Detector(object):
                         #     )
             time.sleep(10)
 
+
         # Analyzing done. Now get report and feed to different malware detectors
-        reports = {task_id: cf.sandbox.get_report(
-            task_id) for task_id in task_ids}
+        reports = {task_id: cf.sandbox.get_report(task_id) for task_id in task_ids}
 
         return task_ids, hash_values, reports
+
 
     def cuckoo_virustotal_detect(self, task):
         task_info = task["info"]
@@ -385,10 +396,8 @@ class Detector(object):
                     if engine_res['detected'] is True:
                         virustotal_detected += 1
             if virustotal_tot_engine > 0:
-                virustotal_res['score'] = virustotal_detected / \
-                    virustotal_tot_engine
-                virustotal_res['msg'] = '{}/{} engines detected as malware'.format(
-                    virustotal_detected, virustotal_tot_engine)
+                virustotal_res['score'] = virustotal_detected / virustotal_tot_engine
+                virustotal_res['msg'] = '{}/{} engines detected as malware'.format(virustotal_detected, virustotal_tot_engine)
                 if virustotal_res['score'] > 0.4:
                     virustotal_res['is_malware'] = 1
             else:
@@ -405,14 +414,14 @@ class Detector(object):
             'virustotal': virustotal_res
         }
 
+
     def HAN_detect(self, task_ids):
         num_task = len(task_ids)
         # data, args = prepare_files([9])
         # data = self.han.prepare_files(task_ids, cuda=False)
 
         self.han.set_task_ids(task_ids=task_ids)
-        # Microsoft.Build.Tasks.v4.0.dll
-        data = self.han.prepare_files(cuda=False)
+        data = self.han.prepare_files(cuda=False) # Microsoft.Build.Tasks.v4.0.dll
         if data is None:
             print('Graph can\'t be created!')
             return [0]*num_task, [0]*num_task, ['Graph can\'t be created!']*num_task
@@ -423,13 +432,14 @@ class Detector(object):
             print('labels, scores', labels, scores)
 
             return labels, scores, None
-
+        
         return None, None, None
 
-    def run_(self, filenames, filepaths):
-        cf.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY,
-                                 hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
 
+    
+    def run_(self, filenames, filepaths):
+        cf.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
+        
         # Run analysis
         for filepath in filepaths:
             task_id = cf.sandbox.start_analysis(filepath)

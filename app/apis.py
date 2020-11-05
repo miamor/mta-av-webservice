@@ -22,10 +22,8 @@ cf.__tasks_done__ = queue.Queue()
 # def process_task():
 #     threading.Thread(target=cf.controllerCapture.check, daemon=True).start()
 
-cf.__tasks_process__ = Process(target=fcn.fcn_check)
+cf.__tasks_process__ = Process(target=fcn.check)
 cf.__tasks_process__.start()
-
-# cf.__tasks_process__ = Pool()
 
 
 

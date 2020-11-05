@@ -74,15 +74,15 @@ def check():
     # Process by batch.
     # Load a batch of 10 files unprocessed in database
 
-    while not cf.is_processing:
-        cf.__pool_run_cuckoo__ = Pool()
+    # while not cf.is_processing:
+    if True:
+        # cf.__pool_run_cuckoo__ = Pool(1)
 
         # load unprocessed from database
         cmd = "select * from capture where detected_by is null order by capture_id asc limit 0,{}".format(
             cf.process_batch_size)
-        engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
-        connection = engine.connect()
-        captures_unprocessed = connection.execute(cmd).fetchall()
+
+        captures_unprocessed = cf.connection.execute(cmd).fetchall()
 
         # found unprocessed task
         if captures_unprocessed is not None and len(captures_unprocessed) > 0:
@@ -104,7 +104,10 @@ def check():
             # and cukoo/virustotal result
             # task_ids, resp, scan_time = cf.detector.run(filepaths, task_ids)
             # Run in pool
-            resp = cf.__pool_run_cuckoo__.map(cf.detector.run, task_ids)
+            # resp = cf.__pool_run_cuckoo__.map(cf.detector.run, task_ids)
+            resp = []
+            for task_id in task_ids:
+                resp.append(cf.detector.run(task_id))
             print('[fcn_check] ** __pool_run_cuckoo__ return ', resp)
 
             # start a thread for other detectors

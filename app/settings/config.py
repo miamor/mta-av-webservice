@@ -4,6 +4,8 @@ import os
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'my_precious_secret_key')
     DEBUG = False
+    SQLALCHEMY_ECHO = False
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://mtaav:mtaav@123@localhost:3306/mtaav?charset=utf8'
 
 

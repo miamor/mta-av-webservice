@@ -423,7 +423,7 @@ class Detector(object):
 
         self.han.set_task_ids(task_ids=task_ids)
         data = self.han.prepare_files(cuda=False) # Microsoft.Build.Tasks.v4.0.dll
-        print('[HAN_detect] data', data)
+        # print('[HAN_detect] data', data)
         if data is None:
             # print('[HAN_detect] *** Graph can\'t be created!')
             return [0]*num_task, [0]*num_task, ['Graph can\'t be created!']*num_task

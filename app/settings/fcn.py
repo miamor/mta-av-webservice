@@ -2,6 +2,7 @@ import app.settings.cf as cf
 import os
 import json
 import time
+import datetime
 
 # from sqlalchemy import text
 from app.app import db
@@ -161,7 +162,7 @@ def check():
 
                 # add notification
                 msg = 'Xử lý thành công các files {}. Xem chi tiết tại: <<{}>>'.format(', '.join(filenames), '|'.join(links))
-                cmd_add_noti = "insert into notification (user_id, message) values ({}, '{}')".format(2, msg)
+                cmd_add_noti = "insert into notification (user_id, message, date_created) values ({}, '{}', '{}')".format(2, msg, datetime.datetime.now())
                 t_connection.execute(cmd_add_noti)
 
 

@@ -71,7 +71,7 @@ def check():
     cmd = "select * from capture where report_id is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
 
     while True:
-        time.sleep(60)
+        time.sleep(120)
         # Process by batch.
         # Load a batch of {batch_size} files unprocessed in database
         if not cf.is_processing:
@@ -165,6 +165,3 @@ def check():
                 cmd_add_noti = "insert into notification (user_id, message, date_created) values ({}, '{}', '{}')".format(2, msg, datetime.datetime.now())
                 t_connection.execute(cmd_add_noti)
 
-
-                # print('[check] Process done. Sleep 30s')
-                # time.sleep(30)

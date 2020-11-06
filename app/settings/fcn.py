@@ -105,7 +105,7 @@ def get_done_to_update():
             filenames = []
             for i in range(len(captures_unprocessed)):
                 # update capture database
-                cf.controllerCapture._parse_malware(data=captures_data_new[i], malware=captures_unprocessed[i])
+                cf.controllerCapture._parse_malware(data=captures_data_new[i], capture_id=captures_unprocessed[i].capture_id)
                 db.session.commit()
 
                 links.append(str(captures_unprocessed[i].capture_id))
@@ -190,7 +190,7 @@ def check():
                 #     future_han = executor.submit(detector.run_han, task_ids, resp)
                 #     resp_all, scan_time = future_han.result()
                 resp_all, scan_time = cf.detector.run_han(task_ids, resp)
-                print('[fcn_check] ** HAN return ', resp_all, scan_time)
+                print('[check] *** HAN return ', resp_all, scan_time)
 
                 # future_ngram = executor.submit(detector.run_ngram, filepaths, task_ids, resp_all)
                 # resp_all, scan_time = future_ngram.result()
@@ -243,12 +243,11 @@ def check():
 
                     filenames.append(filename)
                     captures_data_new.append(tmp)
+                    links.append(str(capture_unprocessed.capture_id))
 
                     # update database
-                    controllerCapture._parse_malware(data=tmp, malware=capture_unprocessed)
+                    controllerCapture._parse_malware(data=tmp, capture_id=capture_unprocessed.capture_id)
                     db.session.commit()
-
-                    links.append(str(capture_unprocessed.capture_id))
 
                     i += 1
 

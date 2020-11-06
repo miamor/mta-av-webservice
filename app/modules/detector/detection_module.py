@@ -32,7 +32,7 @@ class Response(object):
     def add_obj(self, task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep):
         ''' Add detection result to response '''
         if task_id not in self.res:
-            print('add_obj: ~~~~ ', task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
+            # print('add_obj: ~~~~ ', task_id, filename, hash_value, report_path, ftype, fsize, md5, sha1, sha256, sha512, ssdeep)
 
             self.res[task_id] = {
                 'filename' : filename,
@@ -170,7 +170,7 @@ class Detector(object):
                 self.__res__.add_response(task_id, engine_res['is_malware'], engine_res['score'], engine_name, time.time()-self.begin_time, engine_res['msg'])
 
         scan_time = time.time()-self.begin_time
-        print('time', scan_time)
+        # print('time', scan_time)
 
         return self.__res__.get(), scan_time
 
@@ -226,7 +226,7 @@ class Detector(object):
         # self.__res__.add_response(task_id, labels[0], scores[0], 'HAN_sec')
 
         scan_time = time.time()-self.begin_time
-        print('[run_han] HAN time', scan_time)
+        # print('[run_han] HAN time', scan_time)
 
         return self.__res__.get(), scan_time
 
@@ -423,13 +423,13 @@ class Detector(object):
         self.han.set_task_ids(task_ids=task_ids)
         data = self.han.prepare_files(cuda=False) # Microsoft.Build.Tasks.v4.0.dll
         if data is None:
-            print('Graph can\'t be created!')
+            print('[HAN_detect] *** Graph can\'t be created!')
             return [0]*num_task, [0]*num_task, ['Graph can\'t be created!']*num_task
         else:
             labels, scores = self.han.predict_files(data, cuda=False)
             labels = labels.cpu().numpy().tolist()
             scores = scores.cpu().numpy().tolist()
-            print('labels, scores', labels, scores)
+            # print('labels, scores', labels, scores)
 
             return labels, scores, None
         

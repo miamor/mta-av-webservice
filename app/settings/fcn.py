@@ -148,23 +148,32 @@ def check():
         else:
             print('[check] Run process')
             # load unprocessed from database
-            # captures_unprocessed = t_connection.execute(cmd).fetchall()
-            captures_unprocessed = Capture.query.filter(db.and_(Capture.detected_by == None, Capture.file_path != None, Capture.task_id != None)).order_by(Capture.capture_id.asc()).fetchall()
+            # captures_unprocessed_proxy = t_connection.execute(cmd).fetchall()
+            # # captures_unprocessed = Capture.query.filter(db.and_(Capture.detected_by == None, Capture.file_path != None, Capture.task_id != None)).order_by(Capture.capture_id.asc()).fetchall()
+            # print('[check] captures_unprocessed_proxy', captures_unprocessed)
+
+            captures_unprocessed = t_connection.execute(cmd).fetchall()
             print('[check] captures_unprocessed', captures_unprocessed)
 
+            # t_connection.execute(capture.update().where(capture.capture_id == ).values(foo="bar"))
+
             # if found unprocessed task
+            # if captures_unprocessed_proxy is not None and len(captures_unprocessed_proxy) > 0:
             if captures_unprocessed is not None and len(captures_unprocessed) > 0:
                 cf.is_processing = True # lock
 
                 filepaths = []
                 task_ids = []
+                # for capture_unprocessed_proxy in captures_unprocessed_proxy:
+                #     capture_unprocessed = dict(capture_unprocessed_proxy.items())
+                print('[check] *** captures_unprocessed', captures_unprocessed)
                 for capture_unprocessed in captures_unprocessed:
                     print('[check] #', 'capture_unprocessed', capture_unprocessed)
                     # filepaths, task_ids, task_data = data
                     filepaths.append(capture_unprocessed.file_path)
                     task_ids.append(capture_unprocessed.task_id)
 
-                print('[fcn_check] *** Working on {}'.format(task_ids), 'filepaths', filepaths, 'captures_unprocessed', captures_unprocessed)
+                print('[fcn_check] *** Working on ', task_ids, 'filepaths', filepaths, 'captures_unprocessed', captures_unprocessed)
 
                 # print('[fcn_check] task_ids', task_ids, 'filepaths', filepaths)
                 # Run detector core

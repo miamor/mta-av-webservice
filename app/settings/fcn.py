@@ -82,7 +82,7 @@ def check():
             t_connection = t_engine.connect()
     
             captures_unprocessed = t_connection.execute(cmd).fetchall()
-            print('[check] captures_unprocessed', captures_unprocessed)
+            # print('[check] captures_unprocessed', captures_unprocessed)
 
             # if found unprocessed task
             # if captures_unprocessed_proxy is not None and len(captures_unprocessed_proxy) > 0:

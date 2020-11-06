@@ -199,7 +199,8 @@ def check():
                 links = []
                 captures_data_new = []
                 filenames = []
-                for i in range(len(task_ids)):
+                i = 0
+                for capture_unprocessed in captures_unprocessed:
                     tmp = {}
                     task_id = task_ids[i]
                     filepath = filepaths[i]
@@ -244,10 +245,12 @@ def check():
                     captures_data_new.append(tmp)
 
                     # update database
-                    controllerCapture._parse_malware(data=tmp, malware=captures_unprocessed[i])
+                    controllerCapture._parse_malware(data=tmp, malware=capture_unprocessed)
                     db.session.commit()
 
-                    links.append(str(captures_unprocessed[i].capture_id))
+                    links.append(str(capture_unprocessed.capture_id))
+
+                    i += 1
 
 
                 # cf.__tasks_done__.put((captures_data_new, captures_unprocessed))

@@ -70,7 +70,7 @@ def check():
     t_engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
     t_connection = t_engine.connect()
     
-    cmd = "select * from capture where detected_by is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
+    cmd = "select * from capture where report_id is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
 
     while True:
         time.sleep(30)
@@ -81,7 +81,7 @@ def check():
             # load unprocessed from database
 
             captures_unprocessed = t_connection.execute(cmd).fetchall()
-            # print('[check] captures_unprocessed', captures_unprocessed)
+            print('[check] captures_unprocessed', captures_unprocessed)
 
             # if found unprocessed task
             # if captures_unprocessed_proxy is not None and len(captures_unprocessed_proxy) > 0:

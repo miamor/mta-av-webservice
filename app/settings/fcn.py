@@ -148,7 +148,8 @@ def check():
         else:
             print('[check] Run process')
             # load unprocessed from database
-            captures_unprocessed = t_connection.execute(cmd).fetchall()
+            # captures_unprocessed = t_connection.execute(cmd).fetchall()
+            captures_unprocessed = Capture.query.filter(db.and_(Capture.detected_by == None, Capture.file_path != None, Capture.task_id != None)).order_by(Capture.capture_id.asc()).fetchall()
             print('[check] captures_unprocessed', captures_unprocessed)
 
             # if found unprocessed task

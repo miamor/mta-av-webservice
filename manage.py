@@ -4,7 +4,7 @@ import app.settings.cf as cf
 import warnings
 warnings.filterwarnings("ignore", message="Numerical issues were encountered ")
 
-app = create_app('dev')
+app = create_app('prod')
 
 if __name__ == '__main__':
     # manager.run()

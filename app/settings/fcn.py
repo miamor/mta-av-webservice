@@ -122,7 +122,7 @@ def get_done_to_update():
 
 
 def check():
-    print('[fcn_check] **** CALL fcn_check')
+    print('[check] **** CALL check')
 
     t_engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
     t_connection = t_engine.connect()
@@ -133,6 +133,7 @@ def check():
 
     # if True:
     while True:
+        print('[check] ~~ cf.is_processing', cf.is_processing)
         # if cf.__tasks_to_run_detector__.empty():
         #     print('[check] No task in [cf.__tasks_to_run_detector__] queue. Sleep 1s then check again')
         #     time.sleep(1)

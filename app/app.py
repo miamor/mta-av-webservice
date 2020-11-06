@@ -31,11 +31,7 @@ flask_bcrypt = Bcrypt()
 def init_app(config_name):
     app = Flask(__name__)
     CORS(app)
-    print('[init_app] *** config_name', config_name)
     app.config.from_object(config_by_name[config_name])
-    app.config['ENV'] = 'production'
-    app.config['DEBUG'] = False
-    app.config['TESTING'] = False
     db.init_app(app)
     flask_bcrypt.init_app(app)
     return app

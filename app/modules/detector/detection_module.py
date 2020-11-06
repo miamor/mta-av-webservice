@@ -193,7 +193,7 @@ class Detector(object):
         
         # task_ids = [task_id]
         labels, scores, msg = self.HAN_detect(task_ids)
-        print('[run_han] labels', labels, 'scores', scores)
+        print('[run_han] labels', labels, 'scores', scores, ' ||  task_ids', task_ids)
         for i, task_id in enumerate(task_ids):
             # A little trick to decrease far
             if labels[i] == 1:
@@ -423,8 +423,9 @@ class Detector(object):
 
         self.han.set_task_ids(task_ids=task_ids)
         data = self.han.prepare_files(cuda=False) # Microsoft.Build.Tasks.v4.0.dll
+        print('[HAN_detect] data', data)
         if data is None:
-            print('[HAN_detect] *** Graph can\'t be created!')
+            # print('[HAN_detect] *** Graph can\'t be created!')
             return [0]*num_task, [0]*num_task, ['Graph can\'t be created!']*num_task
         else:
             labels, scores = self.han.predict_files(data, cuda=False)

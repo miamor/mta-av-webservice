@@ -77,9 +77,10 @@ def check():
         # Load a batch of {batch_size} files unprocessed in database
         if cf.is_processing:
             print('[check] Some task is processing. Sleep 10s then check again')
-            time.sleep(10)
+            time.sleep(30)
         else:
-            print('[check] *** Start processing some tasks')
+            time.sleep(10)
+            print('[check] *** After sleep 10s, Start processing some tasks')
             # load unprocessed from database
 
             captures_unprocessed = t_connection.execute(cmd).fetchall()
@@ -163,8 +164,5 @@ def check():
 
                 # add notification
                 msg = 'Xử lý thành công các files {}. Xem chi tiết tại: <<{}>>'.format(', '.join(filenames), '|'.join(links))
-                cmd_add_noti = 'insert into notification (user_id, message) values ({}, {})'.format(2, msg)
+                cmd_add_noti = "insert into notification (user_id, message) values ({}, '{}')".format(2, msg)
                 t_connection.execute(cmd_add_noti)
-
-                print('[check] Process done. Sleep 10s')
-                time.sleep(10)

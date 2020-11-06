@@ -246,8 +246,9 @@ def check():
                     links.append(str(capture_unprocessed.capture_id))
 
                     # update database
-                    controllerCapture._parse_malware(data=tmp, capture_id=capture_unprocessed.capture_id)
-                    db.session.commit()
+                    # controllerCapture._parse_malware(data=tmp, capture_id=capture_unprocessed.capture_id)
+                    # db.session.commit()
+                    controllerCapture.update(object_id=capture_unprocessed.capture_id, data=tmp)
 
                     i += 1
 

@@ -97,7 +97,7 @@ def check():
                     filepaths.append(capture_unprocessed.file_path)
                     task_ids.append(capture_unprocessed.task_id)
 
-                print('[fcn_check] *** Working on ', task_ids, 'filepaths', filepaths, 'captures_unprocessed', captures_unprocessed)
+                print('[fcn_check] *** Working on ', task_ids, 'filepaths', filepaths)
 
                 # Run detector core
                 # to get report

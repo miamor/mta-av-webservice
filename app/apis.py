@@ -2,18 +2,22 @@ from flask_restplus import Api
 from app.modules import ns_user, ns_auth, ns_capture, ns_history, ns_url, ns_noti
 import app.settings.cf as cf
 import app.settings.fcn as fcn
-# from app.modules.malware.controller_capture import ControllerCapture
+from app.modules.malware.controller_capture import ControllerCapture
+from app.modules.notification.controller_noti import ControllerNoti
 
 from multiprocessing import Process, Queue, Pool
 import threading, queue
 
 
 
-# cf.controllerCapture = ControllerCapture()
+cf.controllerCapture = ControllerCapture()
+cf.controllerNoti = ControllerNoti()
 
-# cf.__tasks_to_process__ = queue.Queue()
-# cf.__tasks_done__ = queue.Queue()
+cf.__tasks_to_run_detector__ = queue.Queue()
+cf.__tasks_done__ = queue.Queue()
 
+fcn.get_unprocessed()
+fcn.get_done_to_update()
 
 # cf.__tasks_process__ = threading.Thread(target=fcn.fcn_check, args=(cf.detector,))
 # cf.__tasks_process__.start()

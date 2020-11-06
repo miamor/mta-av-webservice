@@ -128,6 +128,8 @@ def check():
     t_connection = t_engine.connect()
     controllerCapture = ControllerCapture()
     controllerNoti = ControllerNoti()
+    
+    cmd = "select * from capture where detected_by is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
 
     # if True:
     while True:
@@ -139,10 +141,11 @@ def check():
 
         # Process by batch.
         # Load a batch of {batch_size} files unprocessed in database
-        if not cf.is_processing:
+        if cf.is_processing:
+            print('[check] Some task is processing. Sleep 1s then check again')
+            time.sleep(1)
+        else:
             # load unprocessed from database
-            cmd = "select * from capture where detected_by is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
-
             captures_unprocessed = t_connection.execute(cmd).fetchall()
 
             # if found unprocessed task
@@ -157,92 +160,92 @@ def check():
                     filepaths.append(capture_unprocessed.file_path)
                     task_ids.append(capture_unprocessed.task_id)
 
-            print('[fcn_check] *** Working on {}'.format(task_ids), 'filepaths', filepaths, 'captures_unprocessed', captures_unprocessed)
+                print('[fcn_check] *** Working on {}'.format(task_ids), 'filepaths', filepaths, 'captures_unprocessed', captures_unprocessed)
 
-            # print('[fcn_check] task_ids', task_ids, 'filepaths', filepaths)
-            # Run detector core
-            # to get report
-            # and cukoo/virustotal result
-            # task_ids, resp, scan_time = cf.detector.run(filepaths, task_ids)
-            resp, scan_time = cf.detector.run(filepaths, task_ids)
+                # print('[fcn_check] task_ids', task_ids, 'filepaths', filepaths)
+                # Run detector core
+                # to get report
+                # and cukoo/virustotal result
+                # task_ids, resp, scan_time = cf.detector.run(filepaths, task_ids)
+                resp, scan_time = cf.detector.run(filepaths, task_ids)
 
-            # start a thread for other detectors
-            # t1 = threading.Thread(target=detector.run_han, args=(task_ids))
-            # t1.start()
-            # print('[fcn_check] resp', resp)
-            # with concurrent.futures.ThreadPoolExecutor() as executor:
-            #     future_han = executor.submit(detector.run_han, task_ids, resp)
-            #     resp_all, scan_time = future_han.result()
-            resp_all, scan_time = cf.detector.run_han(task_ids, resp)
-            print('[fcn_check] ** HAN return ', resp_all, scan_time)
+                # start a thread for other detectors
+                # t1 = threading.Thread(target=detector.run_han, args=(task_ids))
+                # t1.start()
+                # print('[fcn_check] resp', resp)
+                # with concurrent.futures.ThreadPoolExecutor() as executor:
+                #     future_han = executor.submit(detector.run_han, task_ids, resp)
+                #     resp_all, scan_time = future_han.result()
+                resp_all, scan_time = cf.detector.run_han(task_ids, resp)
+                print('[fcn_check] ** HAN return ', resp_all, scan_time)
 
-            # future_ngram = executor.submit(detector.run_ngram, filepaths, task_ids, resp_all)
-            # resp_all, scan_time = future_ngram.result()
-            # print('** NGRAM return ', resp_all, scan_time)
+                # future_ngram = executor.submit(detector.run_ngram, filepaths, task_ids, resp_all)
+                # resp_all, scan_time = future_ngram.result()
+                # print('** NGRAM return ', resp_all, scan_time)
 
-            links = []
-            captures_data_new = []
-            filenames = []
-            for i in range(len(task_ids)):
-                tmp = {}
-                task_id = task_ids[i]
-                filepath = filepaths[i]
-                # filename = filenames[i]
+                links = []
+                captures_data_new = []
+                filenames = []
+                for i in range(len(task_ids)):
+                    tmp = {}
+                    task_id = task_ids[i]
+                    filepath = filepaths[i]
+                    # filename = filenames[i]
 
-                filename = filepath.split('/')[-1]
-                res = resp_all[0][task_id]
-                engines_detected = resp_all[1][task_id]
-                detector_output = resp_all[2][task_id]
-                # print('res', res)
-                # if res['is_malware'] == 1:
-                # print('i=', i, tmp)
-                tmp['file_name'] = filename
-                tmp['file_size'] = os.path.getsize(filepath)
-                tmp['file_extension'] = filepath.split('.')[-1]
-                # tmp['file_path'] = filepath
-                tmp['report_path'] = res['report_path']
-                tmp['report_id'] = res['report_id']
+                    filename = filepath.split('/')[-1]
+                    res = resp_all[0][task_id]
+                    engines_detected = resp_all[1][task_id]
+                    detector_output = resp_all[2][task_id]
+                    # print('res', res)
+                    # if res['is_malware'] == 1:
+                    # print('i=', i, tmp)
+                    tmp['file_name'] = filename
+                    tmp['file_size'] = os.path.getsize(filepath)
+                    tmp['file_extension'] = filepath.split('.')[-1]
+                    # tmp['file_path'] = filepath
+                    tmp['report_path'] = res['report_path']
+                    tmp['report_id'] = res['report_id']
 
-                tmp['hash'] = res['hash_value']
-                tmp['md5'] = res['md5']
-                tmp['sha1'] = res['sha1']
-                tmp['sha256'] = res['sha256']
-                tmp['sha512'] = res['sha512']
-                tmp['ssdeep'] = res['ssdeep']
+                    tmp['hash'] = res['hash_value']
+                    tmp['md5'] = res['md5']
+                    tmp['sha1'] = res['sha1']
+                    tmp['sha256'] = res['sha256']
+                    tmp['sha512'] = res['sha512']
+                    tmp['ssdeep'] = res['ssdeep']
 
-                # tmp['source_ip'] = request.remote_addr
-                tmp['detected_by'] = ','.join(engines_detected)
-                tmp['detector_output'] = json.dumps(
-                    detector_output)
-                tmp['scan_time'] = scan_time
+                    # tmp['source_ip'] = request.remote_addr
+                    tmp['detected_by'] = ','.join(engines_detected)
+                    tmp['detector_output'] = json.dumps(
+                        detector_output)
+                    tmp['scan_time'] = scan_time
 
-                if 'date_received' not in tmp:
-                    tmp['date_received'] = time.strftime('%Y-%m-%d')
-                if 'time_received' not in tmp:
-                    tmp['time_received'] = time.strftime('%H:%M:%S')
+                    if 'date_received' not in tmp:
+                        tmp['date_received'] = time.strftime('%Y-%m-%d')
+                    if 'time_received' not in tmp:
+                        tmp['time_received'] = time.strftime('%H:%M:%S')
 
-                if 'destination_ip' not in tmp:
-                    tmp['destination_ip'] = ''
+                    if 'destination_ip' not in tmp:
+                        tmp['destination_ip'] = ''
 
-                filenames.append(filename)
-                captures_data_new.append(tmp)
+                    filenames.append(filename)
+                    captures_data_new.append(tmp)
 
-                # update database
-                controllerCapture._parse_malware(data=tmp, malware=captures_unprocessed[i])
-                db.session.commit()
+                    # update database
+                    controllerCapture._parse_malware(data=tmp, malware=captures_unprocessed[i])
+                    db.session.commit()
 
-                links.append(str(captures_unprocessed[i].capture_id))
+                    links.append(str(captures_unprocessed[i].capture_id))
 
 
-            # cf.__tasks_done__.put((captures_data_new, captures_unprocessed))
-            # cf.is_processing = False # done processing
-            # cf.__tasks_to_run_detector__.task_done()
+                # cf.__tasks_done__.put((captures_data_new, captures_unprocessed))
+                # cf.is_processing = False # done processing
+                # cf.__tasks_to_run_detector__.task_done()
 
-            cf.is_processing = False
+                cf.is_processing = False
 
-            # add notification
-            noti_data = {
-                'user_id': 2,
-                'message': 'Xử lý thành công các files {}. Xem chi tiết tại: <<{}>>'.format(', '.join(filenames), '|'.join(links))
-            }
-            controllerNoti.create(data=noti_data)
+                # add notification
+                noti_data = {
+                    'user_id': 2,
+                    'message': 'Xử lý thành công các files {}. Xem chi tiết tại: <<{}>>'.format(', '.join(filenames), '|'.join(links))
+                }
+                controllerNoti.create(data=noti_data)

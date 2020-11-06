@@ -119,11 +119,11 @@ class Detector(object):
                 if task_id not in done_report:
                     task_status, errors, hash_value = cf.sandbox.get_task_status(task_id)
                     # print('errors', errors)
-                    print('#', task_id, 'task_status', task_status, 'errors', errors)
+                    # print('#', task_id, 'task_status', task_status, 'errors', errors)
                     if task_status == 'reported':
                         hash_values[task_id] = hash_value
                         done_report.append(task_id)
-            time.sleep(10)
+            time.sleep(30)
 
 
         k = 0
@@ -357,7 +357,7 @@ class Detector(object):
                 if task_id not in done_report:
                     task_status, errors, hash_value = cf.sandbox.get_task_status(task_id)
                     # print('errors', errors)
-                    print('#', task_id, 'task_status', task_status, 'errors', errors)
+                    # print('#', task_id, 'task_status', task_status, 'errors', errors)
                     if task_status == 'reported':
                         hash_values[task_id] = hash_value
                         done_report.append(task_id)
@@ -365,7 +365,7 @@ class Detector(object):
                         #     return jsonify(
                         #         {"status": "error", "status_msg": "Error analyzing.\n"+'\n'.join(errors)}
                         #     )
-            time.sleep(10)
+            time.sleep(30)
 
 
         # Analyzing done. Now get report and feed to different malware detectors

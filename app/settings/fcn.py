@@ -166,6 +166,7 @@ def check():
                 task_ids = []
                 # for capture_unprocessed_proxy in captures_unprocessed_proxy:
                 #     capture_unprocessed = dict(capture_unprocessed_proxy.items())
+                print('[check] *** captures_unprocessed', captures_unprocessed)
                 for capture_unprocessed in captures_unprocessed:
                     print('[check] #', 'capture_unprocessed', capture_unprocessed)
                     # filepaths, task_ids, task_data = data

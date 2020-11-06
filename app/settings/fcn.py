@@ -146,8 +146,10 @@ def check():
             print('[check] Some task is processing. Sleep 10s then check again')
             time.sleep(10)
         else:
+            print('[check] Run process')
             # load unprocessed from database
             captures_unprocessed = t_connection.execute(cmd).fetchall()
+            print('[check] captures_unprocessed', captures_unprocessed)
 
             # if found unprocessed task
             if captures_unprocessed is not None and len(captures_unprocessed) > 0:

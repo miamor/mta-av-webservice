@@ -98,7 +98,7 @@ def get_done_to_update():
     while True:
         if cf.__tasks_done__.empty():
             print('[check] No task in [cf.__tasks_done__] queue. Sleep 1s then check again')
-            time.sleep(1)
+            time.sleep(10)
         else:
             captures_data_new, captures_unprocessed = cf.__tasks_done__.get()
             links = []
@@ -136,15 +136,15 @@ def check():
         print('[check] ~~ cf.is_processing', cf.is_processing)
         # if cf.__tasks_to_run_detector__.empty():
         #     print('[check] No task in [cf.__tasks_to_run_detector__] queue. Sleep 1s then check again')
-        #     time.sleep(1)
+        #     time.sleep(10)
         # else:
         #     filepaths, task_ids, captures_unprocessed = cf.__tasks_to_run_detector__.get()
 
         # Process by batch.
         # Load a batch of {batch_size} files unprocessed in database
         if cf.is_processing:
-            print('[check] Some task is processing. Sleep 1s then check again')
-            time.sleep(1)
+            print('[check] Some task is processing. Sleep 10s then check again')
+            time.sleep(10)
         else:
             # load unprocessed from database
             captures_unprocessed = t_connection.execute(cmd).fetchall()
@@ -251,5 +251,5 @@ def check():
                 }
                 controllerNoti.create(data=noti_data)
 
-                print('[check] Process done. Sleep 1s')
-                time.sleep(1)
+                print('[check] Process done. Sleep 10s')
+                time.sleep(10)

@@ -27,9 +27,6 @@ db = SQLAlchemy()
 flask_bcrypt = Bcrypt()
 
 
-cf.engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
-cf.connection = cf.engine.connect()
-
 
 def init_app(config_name):
     app = Flask(__name__)

@@ -133,7 +133,7 @@ def check():
 
     # if True:
     while True:
-        print('[check] ~~ cf.is_processing', cf.is_processing)
+        # print('[check] ~~ cf.is_processing', cf.is_processing)
         # if cf.__tasks_to_run_detector__.empty():
         #     print('[check] No task in [cf.__tasks_to_run_detector__] queue. Sleep 1s then check again')
         #     time.sleep(10)

@@ -3,10 +3,6 @@ import os
 import json
 import time
 
-from app.modules.common.controller import Controller
-from app.modules.malware.capture import Capture
-from app.modules.malware.controller_capture import ControllerCapture
-from app.modules.notification.controller_noti import ControllerNoti
 # from sqlalchemy import text
 from app.app import db
 from app.settings.config import Config
@@ -68,94 +64,26 @@ def upload_file_submit_cuckoo(files):
 
 cf.is_processing = False
 
-def get_unprocessed():
-    while True:
-        if not cf.is_processing: # if no task is being processed
-            # load unprocessed from database
-            cmd = "select * from capture where detected_by is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(
-                cf.process_batch_size)
-
-            captures_unprocessed = cf.connection.execute(cmd).fetchall()
-
-            # if found unprocessed task
-            if captures_unprocessed is not None and len(captures_unprocessed) > 0:
-                cf.is_processing = True # lock
-
-                filepaths = []
-                task_ids = []
-                for capture_unprocessed in captures_unprocessed:
-                    print('[check] #', 'capture_unprocessed', capture_unprocessed)
-                    # filepaths, task_ids, task_data = data
-                    filepaths.append(capture_unprocessed.file_path)
-                    task_ids.append(capture_unprocessed.task_id)
-                
-                cf.__tasks_to_run_detector__.put((filepaths, task_ids, captures_unprocessed))
-
-            print('[get_unprocessed] Sleep for 10s')
-            time.sleep(10)
-
-def get_done_to_update():
-    while True:
-        if cf.__tasks_done__.empty():
-            print('[check] No task in [cf.__tasks_done__] queue. Sleep 1s then check again')
-            time.sleep(10)
-        else:
-            captures_data_new, captures_unprocessed = cf.__tasks_done__.get()
-            links = []
-            filenames = []
-            for i in range(len(captures_unprocessed)):
-                # update capture database
-                cf.controllerCapture._parse_malware(data=captures_data_new[i], capture_id=captures_unprocessed[i].capture_id)
-                db.session.commit()
-
-                links.append(str(captures_unprocessed[i].capture_id))
-                filenames.append(captures_unprocessed[i].file_name)
-
-            # add notification
-            noti_data = {
-                'user_id': 2,
-                'message': 'Xử lý thành công các file {}. Xem chi tiết tại: <<{}>>'.format(', '.join(filenames), '|'.join(links))
-            }
-            cf.controllerNoti.create(data=noti_data)
-
-            cf.__tasks_done__.task_done()
-
-
 def check():
     print('[check] **** CALL check')
 
     t_engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
     t_connection = t_engine.connect()
-    controllerCapture = ControllerCapture()
-    controllerNoti = ControllerNoti()
     
     cmd = "select * from capture where detected_by is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
 
-    # if True:
     while True:
-        # print('[check] ~~ cf.is_processing', cf.is_processing)
-        # if cf.__tasks_to_run_detector__.empty():
-        #     print('[check] No task in [cf.__tasks_to_run_detector__] queue. Sleep 1s then check again')
-        #     time.sleep(10)
-        # else:
-        #     filepaths, task_ids, captures_unprocessed = cf.__tasks_to_run_detector__.get()
-
         # Process by batch.
         # Load a batch of {batch_size} files unprocessed in database
         if cf.is_processing:
             print('[check] Some task is processing. Sleep 10s then check again')
             time.sleep(10)
         else:
-            print('[check] Run process')
+            print('[check] *** Start processing some tasks')
             # load unprocessed from database
-            # captures_unprocessed_proxy = t_connection.execute(cmd).fetchall()
-            # # captures_unprocessed = Capture.query.filter(db.and_(Capture.detected_by == None, Capture.file_path != None, Capture.task_id != None)).order_by(Capture.capture_id.asc()).fetchall()
-            # print('[check] captures_unprocessed_proxy', captures_unprocessed)
 
             captures_unprocessed = t_connection.execute(cmd).fetchall()
-            print('[check] captures_unprocessed', captures_unprocessed)
-
-            # t_connection.execute(capture.update().where(capture.capture_id == ).values(foo="bar"))
+            # print('[check] captures_unprocessed', captures_unprocessed)
 
             # if found unprocessed task
             # if captures_unprocessed_proxy is not None and len(captures_unprocessed_proxy) > 0:
@@ -164,22 +92,17 @@ def check():
 
                 filepaths = []
                 task_ids = []
-                # for capture_unprocessed_proxy in captures_unprocessed_proxy:
-                #     capture_unprocessed = dict(capture_unprocessed_proxy.items())
-                print('[check] *** captures_unprocessed', captures_unprocessed)
+                # print('[check] *** captures_unprocessed', captures_unprocessed)
                 for capture_unprocessed in captures_unprocessed:
-                    print('[check] #', 'capture_unprocessed', capture_unprocessed)
-                    # filepaths, task_ids, task_data = data
+                    # print('[check] #', 'capture_unprocessed', capture_unprocessed)
                     filepaths.append(capture_unprocessed.file_path)
                     task_ids.append(capture_unprocessed.task_id)
 
                 print('[fcn_check] *** Working on ', task_ids, 'filepaths', filepaths, 'captures_unprocessed', captures_unprocessed)
 
-                # print('[fcn_check] task_ids', task_ids, 'filepaths', filepaths)
                 # Run detector core
                 # to get report
                 # and cukoo/virustotal result
-                # task_ids, resp, scan_time = cf.detector.run(filepaths, task_ids)
                 resp, scan_time = cf.detector.run(filepaths, task_ids)
 
                 # start a thread for other detectors
@@ -192,10 +115,6 @@ def check():
                 resp_all, scan_time = cf.detector.run_han(task_ids, resp)
                 print('[check] *** HAN return ', resp_all, scan_time)
 
-                # future_ngram = executor.submit(detector.run_ngram, filepaths, task_ids, resp_all)
-                # resp_all, scan_time = future_ngram.result()
-                # print('** NGRAM return ', resp_all, scan_time)
-
                 links = []
                 captures_data_new = []
                 filenames = []
@@ -204,67 +123,48 @@ def check():
                     tmp = {}
                     task_id = task_ids[i]
                     filepath = filepaths[i]
-                    # filename = filenames[i]
 
                     filename = filepath.split('/')[-1]
                     res = resp_all[0][task_id]
                     engines_detected = resp_all[1][task_id]
                     detector_output = resp_all[2][task_id]
-                    # print('res', res)
-                    # if res['is_malware'] == 1:
-                    # print('i=', i, tmp)
-                    tmp['file_name'] = filename
-                    tmp['file_size'] = os.path.getsize(filepath)
-                    tmp['file_extension'] = filepath.split('.')[-1]
-                    # tmp['file_path'] = filepath
-                    tmp['report_path'] = res['report_path']
-                    tmp['report_id'] = res['report_id']
 
-                    tmp['hash'] = res['hash_value']
-                    tmp['md5'] = res['md5']
-                    tmp['sha1'] = res['sha1']
-                    tmp['sha256'] = res['sha256']
-                    tmp['sha512'] = res['sha512']
-                    tmp['ssdeep'] = res['ssdeep']
+                    update_el = []
 
-                    # tmp['source_ip'] = request.remote_addr
-                    tmp['detected_by'] = ','.join(engines_detected)
-                    tmp['detector_output'] = json.dumps(
-                        detector_output)
-                    tmp['scan_time'] = scan_time
+                    update_el.append("{} = '{}'".format('file_name', filename))
+                    update_el.append("{} = '{}'".format('file_extension', filepath.split('.')[-1]))
+                    update_el.append("{} = '{}'".format('file_size', os.path.getsize(filepath)))
+                    update_el.append("{} = '{}'".format('report_path', res['report_path']))
+                    update_el.append("{} = '{}'".format('report_id', res['report_id']))
+                    update_el.append("{} = '{}'".format('hash', res['hash_value']))
+                    update_el.append("{} = '{}'".format('md5', res['md5']))
+                    update_el.append("{} = '{}'".format('sha1', res['sha1']))
+                    update_el.append("{} = '{}'".format('sha256', res['sha256']))
+                    update_el.append("{} = '{}'".format('sha512', res['sha512']))
+                    update_el.append("{} = '{}'".format('ssdeep', res['ssdeep']))
 
-                    if 'date_received' not in tmp:
-                        tmp['date_received'] = time.strftime('%Y-%m-%d')
-                    if 'time_received' not in tmp:
-                        tmp['time_received'] = time.strftime('%H:%M:%S')
+                    update_el.append("{} = '{}'".format('detected_by', ','.join(engines_detected)))
+                    update_el.append("{} = '{}'".format('detector_output', json.dumps(
+                        detector_output)))
+                    update_el.append("{} = '{}'".format('scan_time', scan_time))
 
-                    if 'destination_ip' not in tmp:
-                        tmp['destination_ip'] = ''
+                    update_str = ', '.join(update_el)
+                    cmd_update_capture = 'update capture set {} where capture_id = {}'.format(update_str, capture_unprocessed.capture_id)
+                    t_connection.execute(cmd_update_capture)
 
                     filenames.append(filename)
                     captures_data_new.append(tmp)
                     links.append(str(capture_unprocessed.capture_id))
 
-                    # update database
-                    # controllerCapture._parse_malware(data=tmp, capture_id=capture_unprocessed.capture_id)
-                    # db.session.commit()
-                    controllerCapture.update(object_id=capture_unprocessed.capture_id, data=tmp)
-
                     i += 1
 
-
-                # cf.__tasks_done__.put((captures_data_new, captures_unprocessed))
-                # cf.is_processing = False # done processing
-                # cf.__tasks_to_run_detector__.task_done()
 
                 cf.is_processing = False
 
                 # add notification
-                noti_data = {
-                    'user_id': 2,
-                    'message': 'Xử lý thành công các files {}. Xem chi tiết tại: <<{}>>'.format(', '.join(filenames), '|'.join(links))
-                }
-                controllerNoti.create(data=noti_data)
+                msg = 'Xử lý thành công các files {}. Xem chi tiết tại: <<{}>>'.format(', '.join(filenames), '|'.join(links))
+                cmd_add_noti = 'insert into notification (user_id, message) values ({}, {})'.format(2, msg)
+                t_connection.execute(cmd_add_noti)
 
                 print('[check] Process done. Sleep 10s')
                 time.sleep(10)

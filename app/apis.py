@@ -31,6 +31,8 @@ cf.controllerNoti = ControllerNoti()
 t = threading.Thread(target=fcn.check)
 t.start()
 
+t.join()
+
 def init_api():
     api = Api(title='mtaSMaD APIs',
               version='1.0',

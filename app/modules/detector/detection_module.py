@@ -437,15 +437,15 @@ class Detector(object):
 
 
     
-    def run_(self, filenames, filepaths):
-        cf.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
+    # def run_(self, filenames, filepaths):
+    #     cf.sandbox = Sandbox_API(cuckoo_API=cf.cuckoo_API, SECRET_KEY=cf.cuckoo_SECRET_KEY, hash_type=cf.hash_type, timeout=cf.cuckoo_timeout)
         
-        # Run analysis
-        for filepath in filepaths:
-            task_id = cf.sandbox.start_analysis(filepath)
-            # print("task_id", task_id)
+    #     # Run analysis
+    #     for filepath in filepaths:
+    #         task_id = cf.sandbox.start_analysis(filepath)
+    #         # print("task_id", task_id)
 
-            if task_id is None:
-                return jsonify({"status": "error", "status_msg": "Create task for file {} failed.".format(filepath)})
-            else:
-                return jsonify({"status": "success", "status_msg": "Created task for file {}. {}".format(filepath, task_id)})
+    #         if task_id is None:
+    #             return jsonify({"status": "error", "status_msg": "Create task for file {} failed.".format(filepath)})
+    #         else:
+    #             return jsonify({"status": "success", "status_msg": "Created task for file {}. {}".format(filepath, task_id)})

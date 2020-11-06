@@ -132,7 +132,10 @@ def check():
 
                     update_el.append("{} = '{}'".format('file_name', filename))
                     update_el.append("{} = '{}'".format('file_extension', filepath.split('.')[-1]))
-                    update_el.append("{} = '{}'".format('file_size', os.path.getsize(filepath)))
+
+                    if os.path.exists(filepath):
+                        update_el.append("{} = '{}'".format('file_size', os.path.getsize(filepath)))
+
                     update_el.append("{} = '{}'".format('report_path', res['report_path']))
                     update_el.append("{} = '{}'".format('report_id', res['report_id']))
                     update_el.append("{} = '{}'".format('hash', res['hash_value']))

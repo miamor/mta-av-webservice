@@ -124,17 +124,38 @@ def get_done_to_update():
 def check():
     print('[fcn_check] **** CALL fcn_check')
 
-    # Process by batch.
-    # Load a batch of 10 files unprocessed in database
+    t_engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
+    t_connection = t_engine.connect()
+    controllerCapture = ControllerCapture()
+    controllerNoti = ControllerNoti()
 
-    # while not cf.is_processing:
     # if True:
     while True:
-        if cf.__tasks_to_run_detector__.empty():
-            print('[check] No task in [cf.__tasks_to_run_detector__] queue. Sleep 1s then check again')
-            time.sleep(1)
-        else:
-            filepaths, task_ids, captures_unprocessed = cf.__tasks_to_run_detector__.get()
+        # if cf.__tasks_to_run_detector__.empty():
+        #     print('[check] No task in [cf.__tasks_to_run_detector__] queue. Sleep 1s then check again')
+        #     time.sleep(1)
+        # else:
+        #     filepaths, task_ids, captures_unprocessed = cf.__tasks_to_run_detector__.get()
+
+        # Process by batch.
+        # Load a batch of {batch_size} files unprocessed in database
+        if not cf.is_processing:
+            # load unprocessed from database
+            cmd = "select * from capture where detected_by is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
+
+            captures_unprocessed = t_connection.execute(cmd).fetchall()
+
+            # if found unprocessed task
+            if captures_unprocessed is not None and len(captures_unprocessed) > 0:
+                cf.is_processing = True # lock
+
+                filepaths = []
+                task_ids = []
+                for capture_unprocessed in captures_unprocessed:
+                    print('[check] #', 'capture_unprocessed', capture_unprocessed)
+                    # filepaths, task_ids, task_data = data
+                    filepaths.append(capture_unprocessed.file_path)
+                    task_ids.append(capture_unprocessed.task_id)
 
             print('[fcn_check] *** Working on {}'.format(task_ids), 'filepaths', filepaths, 'captures_unprocessed', captures_unprocessed)
 
@@ -159,10 +180,9 @@ def check():
             # resp_all, scan_time = future_ngram.result()
             # print('** NGRAM return ', resp_all, scan_time)
 
-            report_ids = []
             links = []
             captures_data_new = []
-            # controllerCapture = ControllerCapture()
+            filenames = []
             for i in range(len(task_ids)):
                 tmp = {}
                 task_id = task_ids[i]
@@ -204,40 +224,25 @@ def check():
                 if 'destination_ip' not in tmp:
                     tmp['destination_ip'] = ''
 
-                report_ids.append(res['report_id'])
+                filenames.append(filename)
                 captures_data_new.append(tmp)
 
                 # update database
-                # controllerCapture._parse_malware(data=tmp, malware=captures_unprocessed[i])
-                # db.session.commit()
+                controllerCapture._parse_malware(data=tmp, malware=captures_unprocessed[i])
+                db.session.commit()
 
-                # links.append(str(captures_unprocessed[i].capture_id))
-
-
-            cf.__tasks_done__.put((captures_data_new, captures_unprocessed))
-            cf.is_processing = False # done processing
-            cf.__tasks_to_run_detector__.task_done()
-
-            # cf.__pool_run_cuckoo__.close()
-            # cf.__pool_run_cuckoo__.join()
-            # cf.is_processing = False
-
-            # # print('resp_all[0]', resp_all[0])
-            # # cf.is_running_detection = False
-
-            # # cf.__tasks_to_process__.task_done()
-
-            # # add notification
-            # noti_data = {
-            #     'user_id': 2,
-            #     'message': 'Xử lý thành công các tác vụ {}. Xem chi tiết tại: <<{}>>'.format(', '.join(task_ids), '|'.join(links))
-            # }
-            # controllerNoti = ControllerNoti()
-            # controllerNoti.create(data=noti_data)
+                links.append(str(captures_unprocessed[i].capture_id))
 
 
-            # return result(message='Check completed', data=resp_all[0])
-            # return task_data
+            # cf.__tasks_done__.put((captures_data_new, captures_unprocessed))
+            # cf.is_processing = False # done processing
+            # cf.__tasks_to_run_detector__.task_done()
 
-            # print('resp', resp)
-            # return result(message='Check completed. File clean!')
+            cf.is_processing = False
+
+            # add notification
+            noti_data = {
+                'user_id': 2,
+                'message': 'Xử lý thành công các files {}. Xem chi tiết tại: <<{}>>'.format(', '.join(filenames), '|'.join(links))
+            }
+            controllerNoti.create(data=noti_data)

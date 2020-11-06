@@ -249,3 +249,6 @@ def check():
                     'message': 'Xử lý thành công các files {}. Xem chi tiết tại: <<{}>>'.format(', '.join(filenames), '|'.join(links))
                 }
                 controllerNoti.create(data=noti_data)
+
+                print('[check] Process done. Sleep 1s')
+                time.sleep(1)

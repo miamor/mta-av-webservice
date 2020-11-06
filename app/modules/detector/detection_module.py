@@ -193,6 +193,7 @@ class Detector(object):
         
         # task_ids = [task_id]
         labels, scores, msg = self.HAN_detect(task_ids)
+        print('[run_han] labels', labels, 'scores', scores)
         for i, task_id in enumerate(task_ids):
             # A little trick to decrease far
             if labels[i] == 1:

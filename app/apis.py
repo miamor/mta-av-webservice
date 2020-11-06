@@ -13,11 +13,9 @@ import threading, queue
 cf.controllerCapture = ControllerCapture()
 cf.controllerNoti = ControllerNoti()
 
-cf.__tasks_to_run_detector__ = queue.Queue()
-cf.__tasks_done__ = queue.Queue()
+# cf.__tasks_to_run_detector__ = queue.Queue()
+# cf.__tasks_done__ = queue.Queue()
 
-fcn.get_unprocessed()
-fcn.get_done_to_update()
 
 # cf.__tasks_process__ = threading.Thread(target=fcn.fcn_check, args=(cf.detector,))
 # cf.__tasks_process__.start()

@@ -73,12 +73,10 @@ def check():
     cmd = "select * from capture where detected_by is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
 
     while True:
+        time.sleep(30)
         # Process by batch.
         # Load a batch of {batch_size} files unprocessed in database
-        if cf.is_processing:
-            print('[check] Some task is processing. Sleep 10s then check again')
-            time.sleep(30)
-        else:
+        if not cf.is_processing:
             print('[check] *** Load some tasks to process')
             # load unprocessed from database
 
@@ -167,5 +165,5 @@ def check():
                 t_connection.execute(cmd_add_noti)
 
 
-                print('[check] Process done. Sleep 30s')
-                time.sleep(30)
+                # print('[check] Process done. Sleep 30s')
+                # time.sleep(30)

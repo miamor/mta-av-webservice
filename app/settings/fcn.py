@@ -152,6 +152,7 @@ def check():
 
                     update_str = ', '.join(update_el)
                     cmd_update_capture = 'update capture set {} where capture_id = {}'.format(update_str, capture_unprocessed.capture_id)
+                    print('[chek] *** cmd_update_capture', cmd_update_capture)
                     t_connection.execute(cmd_update_capture)
 
                     filenames.append(filename)

@@ -95,7 +95,14 @@ class ControllerUrl(Controller):
         db.session.delete(url_captured)
         db.session.commit()
 
-    def stat(self):
+    def stat_by_date(self, days, split):
+        today = datetime.datetime.now()
+        dist = datetime.timedelta(days=days)
+        d_start = today - dist
+
+        print('[/url][stat_by_date] days', days, 'split', split)
+        print('[/url][stat_by_date] d_start', d_start)
+
         stat_by_date_tot_cmd = db.select([
             db.func.count(db.distinct(Url.url)).label('total_url'),
 
@@ -103,21 +110,21 @@ class ControllerUrl(Controller):
 
             db.func.FROM_UNIXTIME(db.func.FLOOR(db.func.UNIX_TIMESTAMP(
                 db.func.timestamp(Url.date_requested, Url.time_requested)
-            )/30000)*30000).label('time')
+            )/split)*split).label('time')
 
         ]).group_by(
             'time'
-        ).where(db.and_(Url.url.notlike('%msftncsi%'), Url.date_requested.isnot(None))).order_by(db.asc('time'))
-
-
-        top_url_cmd = db.select([db.func.count(Url.url_capture_id).label('total'), Url.url]).where(db.and_(Url.url.isnot(None), Url.url.notlike('%msftncsi%'))).group_by(Url.url).order_by(db.desc('total')).limit(5)
-
+        ).where(db.and_(
+            Url.url.notlike('%msftncsi%'), 
+            Url.date_requested.isnot(None), 
+            Url.date_requested >= d_start,
+            Url.date_requested <= today
+        )).order_by(db.asc('time'))
 
         engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
         connection = engine.connect()
 
         stat_date_tot = connection.execute(stat_by_date_tot_cmd).fetchall()
-        top_url = connection.execute(top_url_cmd).fetchall()
 
         stat_by_date_data_req = []
         stat_by_date_data_url = []
@@ -131,7 +138,8 @@ class ControllerUrl(Controller):
         stat_by_date = {
             'series': [{
                 'name': 'Total URLs',
-                'type': 'column',
+                # 'type': 'column',
+                'type': 'area',
                 'data': stat_by_date_data_url
             }, {
                 'name': 'Total requests',
@@ -142,6 +150,17 @@ class ControllerUrl(Controller):
         }
         # print('stat_by_date', stat_by_date)
 
+        return stat_by_date
+
+
+    def stat(self):
+        top_url_cmd = db.select([db.func.count(Url.url_capture_id).label('total'), Url.url]).where(db.and_(Url.url.isnot(None), Url.url.notlike('%msftncsi%'))).group_by(Url.url).order_by(db.desc('total')).limit(5)
+
+
+        engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
+        connection = engine.connect()
+
+        top_url = connection.execute(top_url_cmd).fetchall()
 
         top_url_data = []
         for r in top_url:
@@ -149,7 +168,6 @@ class ControllerUrl(Controller):
 
 
         stat_data = {
-            'stat_by_date': stat_by_date,
             'top_url': top_url_data
         }
 

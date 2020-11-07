@@ -98,7 +98,31 @@ class Url(Resource):
 
 
 @api.route('/stat')
-class Url(Resource):
+class UrlStat(Resource):
     def get(self):
         controller = ControllerUrl()
-        return controller.stat()
+        # return controller.stat()
+        stat_data = controller.stat()
+        resp = jsonify({
+            "status": "success",
+            "stat_data": stat_data
+        })
+        resp.status_code = 200
+        return resp
+@api.route('/stat_by_date')
+class UrlStatDate(Resource):
+    def get(self):
+        data = request.args
+        split = int(data['split']) if 'split' in data else 10000
+        days = int(data['days']) if 'days' in data else 10
+
+        controller = ControllerUrl()
+
+        stat_by_date_data = controller.stat_by_date(days, split)
+        resp = jsonify({
+            "status": "success",
+            "stat_by_date": stat_by_date_data
+            # "charts": charts
+        })
+        resp.status_code = 200
+        return resp

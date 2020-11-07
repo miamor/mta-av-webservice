@@ -203,7 +203,7 @@ class Detector(object):
                 if res_obj[2][task_id]['virustotal']['score'] == 0:
                     labels[i] = 0
             elif labels[i] == 0:
-                if res_obj[2][task_id]['cuckoo']['score'] >= 4.5:
+                if res_obj[2][task_id]['cuckoo']['score'] >= 4.7:
                     labels[i] = 1
                     # scores[i] = 0-scores[i]
                 if res_obj[2][task_id]['virustotal']['is_malware']:
@@ -405,7 +405,7 @@ class Detector(object):
                 virustotal_res['msg'] = 'No virustotal scans found'
 
         cuckoo_res = {
-            'is_malware': int(task_info['score'] >= 5.0),
+            'is_malware': int(task_info['score'] >= 6.0),
             'score': task_info['score'],
             'msg': ''
         }

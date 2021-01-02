@@ -68,14 +68,16 @@ cf.is_processing = False
 def check():
     print('[check] **** CALL check')
 
-    cmd = "select * from capture where report_id is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
+    # cmd = "select * from capture where report_id is null and (detected_by is null or detected_by = '') and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
+
+    cmd = "select * from capture where report_id is null and detected_by is null and file_path is not null and task_id is not null order by capture_id asc limit 0,{}".format(cf.process_batch_size)
 
     while True:
-        time.sleep(60)
+        time.sleep(240) # sleep 3m
         # Process by batch.
         # Load a batch of {batch_size} files unprocessed in database
         if not cf.is_processing:
-            print('[check] *** Load some tasks to process')
+            print('[check] *** Load some tasks to process', datetime.datetime.now())
             # load unprocessed from database
 
             t_engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
@@ -97,7 +99,7 @@ def check():
                     filepaths.append(capture_unprocessed.file_path)
                     task_ids.append(capture_unprocessed.task_id)
 
-                print('[fcn_check] *** Working on ', task_ids, 'filepaths', filepaths)
+                print('[check] *** Working on ', task_ids, 'filepaths', filepaths)
 
                 # Run detector core
                 # to get report
@@ -152,6 +154,18 @@ def check():
 
                     update_str = ', '.join(update_el)
                     cmd_update_capture = 'update capture set {} where capture_id = {}'.format(update_str, capture_unprocessed.capture_id)
+
+                    # send socket 
+                    # cmd_GetIP = 'select source_ip from capture where capture_id = {} limit 0,1'.format(capture_unprocessed.capture_id)
+                    # ip = t_connection.execute(cmd_GetIP).fetchall()
+                    # sendSocket = "./socket " + ip[0].source_ip + " " + filename
+                    # print('[check]', sendSocket)
+                    # try:
+                    #     subprocess.check_output(sendSocket, shell=True)
+                    # except:
+                    #     print("not send Socket")
+                    # close socket
+
                     print('[check] *** cmd_update_capture', cmd_update_capture)
                     t_connection.execute(cmd_update_capture)
 

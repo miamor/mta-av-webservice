@@ -5,9 +5,6 @@ from .controller_url import ControllerUrl
 from flask import request, jsonify, abort
 import app.settings.cf as cf
 
-import sys
-sys.path.insert(1, cf.__URLCHECKER_ROOT__)
-import classifier as urlclassifier
 import json
 
 api = DtoUrl.api
@@ -52,23 +49,15 @@ class UrlCheck(Resource):
     def post(self):
         #print('request.form', request.form)
         post_data = json.loads(request.json)
-        # print('[/url/checkurl] POST', post_data)
+        print('[/url/checkurl] POST', post_data)
 
         #urls = post_data['urls'] if urls in post_data else []
         urls = post_data['urls']
-        is_malicious_urls = []
-        if len(urls) > 0:
-            is_malicious_urls = urlclassifier.classifier(urls).tolist()
+        source_ips = post_data['source_ip'] if 'source_ip' in post_data else ''
         # print('[/url/checkurl] is_malicious_urls', is_malicious_urls)
         
         controller = ControllerUrl()
-        for i in range(len(urls)):
-            if is_malicious_urls[i] == 1:
-                data = {
-                    'url': urls[i],
-                    'is_malicious': is_malicious_urls[i]
-                }
-                controller.create(data=data)
+        urls, is_malicious_urls = controller.check(urls, source_ips)
         
         resp = jsonify({
             "status": "success",

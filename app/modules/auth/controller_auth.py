@@ -41,8 +41,10 @@ class ControllerAuth:
                     return error(message='You\'ve reached limit tries. Please try again in {} minutes.'.format(round(3-time_delt, 2)))
             
 
-            user = User.query.filter_by(email=cf.sanitize_data(data.get('email'))).first()
-            if user and user.check_password(cf.sanitize_data(data.get('password'))):
+            # user = User.query.filter_by(email=cf.sanitize_data(data.get('email'))).first()
+            user = User.query.filter_by(email=data.get('email')).first()
+            print("data.get('password')", data.get('password'))
+            if user and user.check_password(data.get('password')):
                 auth_token = User.encode_auth_token(user.user_id)
                 if user.blocked:
                     return error(message='User has been blocked')

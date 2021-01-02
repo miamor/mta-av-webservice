@@ -123,6 +123,7 @@ class Detector(object):
                     if task_status == 'reported':
                         hash_values[task_id] = hash_value
                         done_report.append(task_id)
+                        print('#', task_id, 'DONE! task_status', task_status)
             time.sleep(30)
 
 
@@ -203,7 +204,8 @@ class Detector(object):
                 if res_obj[2][task_id]['virustotal']['score'] == 0:
                     labels[i] = 0
             elif labels[i] == 0:
-                if res_obj[2][task_id]['cuckoo']['score'] >= 4.7:
+                # if res_obj[2][task_id]['cuckoo']['score'] >= 4.7:
+                if res_obj[2][task_id]['cuckoo']['score'] >= 7.7:
                     labels[i] = 1
                     # scores[i] = 0-scores[i]
                 if res_obj[2][task_id]['virustotal']['is_malware']:

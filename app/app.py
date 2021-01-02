@@ -14,7 +14,7 @@ cf.is_running_detection = False
 # cf.waiting_tasks = queue.Queue()
 cf.waiting_tasks = None
 cf.__tasks_process__ = None
-cf.controllerCapture = None
+# cf.controllerCapture = None
 
 
 # from app.modules.detector.detection_module import Detector

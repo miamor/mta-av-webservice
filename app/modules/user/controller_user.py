@@ -192,7 +192,7 @@ class ControllerUser(Controller):
         return users
 
     def _parse_user(self, data, user=None):
-        name, surname, middlename, fullname, age, birthday, home_address, home_country, home_city, home_street, home_geo_long, home_geo_lat, phone, email, username, passwordHash, blocked, token, facebook, instagram, vkontakte, avatar, isadmin = None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None
+        name, surname, middlename, fullname, age, birthday, home_address, home_country, home_city, home_street, home_geo_long, home_geo_lat, phone, email, username, passwordHash, blocked, token, facebook, instagram, vkontakte, avatar, role = None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None
         if 'name' in data:
             name = data['name']
         if 'surname' in data:
@@ -228,6 +228,7 @@ class ControllerUser(Controller):
         # password bat buoc phai co
         password = data['password']
         passwordHash = flask_bcrypt.generate_password_hash(password)
+        print('[/user][_parse_user] passwordHash', passwordHash)
         if 'blocked' in data:
             blocked = bool(data['blocked'])
 
@@ -245,10 +246,10 @@ class ControllerUser(Controller):
         #     isadmin = bool(data['isadmin'])
         if 'role' in data:
             role = int(data['role'])
-        if 'failed_login_attempts' in data:
-            failed_login_attempts = int(data['failed_login_attempts'])
-        if 'failed_login_time' in data:
-            failed_login_time = data['failed_login_time']
+        # if 'failed_login_attempts' in data:
+        #     failed_login_attempts = int(data['failed_login_attempts'])
+        # if 'failed_login_time' in data:
+        #     failed_login_time = data['failed_login_time']
 
         if user is None:
             user = User(name=name, surname=surname, middlename=middlename, fullname=fullname, age=age,
@@ -256,7 +257,7 @@ class ControllerUser(Controller):
                         home_street=home_street, home_geo_long=home_geo_long, home_geo_lat=home_geo_lat, phone=phone,
                         email=email, username=username,
                         password_hash=passwordHash, blocked=blocked, token=token,
-                        facebook=facebook, instagram=instagram, vkontakte=vkontakte, avatar=avatar, role=role, failed_login_attempts=failed_login_attempts, failed_login_time=failed_login_time)
+                        facebook=facebook, instagram=instagram, vkontakte=vkontakte, avatar=avatar, role=role)
         else:
             user.name = name
             user.surname = surname
@@ -285,8 +286,8 @@ class ControllerUser(Controller):
             user.avatar = avatar
             # user.isadmin = isadmin
             user.role = role
-            user.failed_login_attempts = failed_login_attempts
-            user.failed_login_time = failed_login_time
+            # user.failed_login_attempts = failed_login_attempts
+            # user.failed_login_time = failed_login_time
         return user
 
 # def create_user(data):

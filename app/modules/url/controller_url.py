@@ -7,6 +7,10 @@ import app.settings.cf as cf
 from flask_restplus import marshal
 import time
 
+import sys
+sys.path.insert(1, cf.__URLCHECKER_ROOT__)
+import classifier as urlclassifier
+
 # import sys
 # sys.path.insert(1, cf.__URLCHECKER_ROOT__)
 # import classifier as urlclassifier
@@ -94,6 +98,28 @@ class ControllerUrl(Controller):
         url_captured = Url.query.filter_by(url_capture_id=object_id).first()
         db.session.delete(url_captured)
         db.session.commit()
+
+
+    def check(self, urls, source_ips):
+        is_malicious_urls = []
+        if len(urls) > 0:
+            is_malicious_urls = urlclassifier.classifier(urls).tolist()
+        for i in range(len(urls)):
+            if is_malicious_urls[i] == 1:
+                data = {
+                    'url': urls[i],
+                    'is_malicious': is_malicious_urls[i],
+                    'source_ip': source_ips[i]
+                }
+                self.create(data=data)
+        add_total_url_cmd = "insert into total_urls (date, time, total) values('{}', '{}', '{}')".format(str(datetime.datetime.now().strftime('%Y-%m-%d')), str(datetime.datetime.now().strftime('%H:%M:%S')), len(urls))
+
+        engine = db.create_engine(Config.SQLALCHEMY_DATABASE_URI, {})
+        connection = engine.connect()
+        connection.execute(add_total_url_cmd)
+
+        return urls, is_malicious_urls
+
 
     def stat_by_date(self, days, split):
         today = datetime.datetime.now()
